@@ -373,6 +373,14 @@ export type GhostexSession = {
   lastInteractionAt: string;
   lastActiveAt: string;
   primaryTitle: string;
+  /**
+   * The name of the user's last rename the agent never confirmed within 8 seconds, and when
+   * gxserver gave up on it (server/src/presentation/session_attributes.rs
+   * `pending_session_rename_title`): the row title shakes when it appears and Rename opens with
+   * it. Empty once a rename is confirmed or another is requested, and on an older computer.
+   */
+  renameFailedTitle: string;
+  renameFailedAt: string;
   terminalTitle: string;
   titleSource: string;
   trustedResumeTitle: string;
@@ -1057,6 +1065,8 @@ export function parseSession(value: unknown): GhostexSession | null {
     lastInteractionAt: trimmedValue(value, 'lastInteractionAt'),
     lastActiveAt: trimmedValue(value, 'lastActiveAt'),
     primaryTitle: trimmedValue(value, 'primaryTitle'),
+    renameFailedTitle: trimmedValue(value, 'renameFailedTitle'),
+    renameFailedAt: trimmedValue(value, 'renameFailedAt'),
     terminalTitle: trimmedValue(value, 'terminalTitle'),
     titleSource: trimmedValue(value, 'titleSource'),
     trustedResumeTitle: trimmedValue(value, 'trustedResumeTitle'),

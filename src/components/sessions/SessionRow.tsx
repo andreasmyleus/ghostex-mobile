@@ -113,6 +113,41 @@ function useCompletionFlash(session: GhostexSession): Animated.AnimatedInterpola
   return opacity;
 }
 
+/** The title shake's sideways offsets (dp before scaling), one step each RENAME_SHAKE_STEP_MS. */
+const RENAME_SHAKE_OFFSETS = [5, -5, 4, -4, 2, -2, 0];
+const RENAME_SHAKE_STEP_MS = 60;
+
+/**
+ * CDXC:SessionTitles 2026-10-12 DECISION: User: "if you don't get confirmation then show the name
+ * shake". The title shakes once sideways, like a rejected password field, when gxserver publishes
+ * a new `renameFailedAt` for a row this list is already showing (the 8 seconds ran out and the
+ * name the agent reports came back). A row that first appears with an old failure stays still.
+ * SEE-ALSO: `title_with_rename_shake` in apps/desktop/src/app/native_sidebar/sessions.rs.
+ */
+function useRenameShake(session: GhostexSession): Animated.Value {
+  const offset = useRef(new Animated.Value(0)).current;
+  const previousFailedAt = useRef<string | null>(null);
+  useEffect(() => {
+    const before = previousFailedAt.current;
+    previousFailedAt.current = session.renameFailedAt;
+    if (before === null || session.renameFailedAt.length === 0 || session.renameFailedAt === before) {
+      return;
+    }
+    offset.setValue(0);
+    Animated.sequence(
+      RENAME_SHAKE_OFFSETS.map((toValue) =>
+        Animated.timing(offset, {
+          toValue: ds(toValue),
+          duration: RENAME_SHAKE_STEP_MS,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ),
+    ).start();
+  }, [offset, session.renameFailedAt]);
+  return offset;
+}
+
 /**
  * apps/desktop/src/app/native_sidebar/status.rs `activity_indicator`: one dot
  * centered in a 19x16 slot.
@@ -241,6 +276,7 @@ export default function SessionRow({
   const title = session.displayTitle.length > 0 ? session.displayTitle : SessionCopy.fallbackTitle;
   const nowMs = useRowLabelClock(session);
   const flashOpacity = useCompletionFlash(session);
+  const renameShake = useRenameShake(session);
   const question = hasPendingQuestion(session);
   const indicator = question ? null : rowActivityIndicator(session);
   const timeLabel = rowTimeLabel(session, nowMs);
@@ -384,13 +420,17 @@ export default function SessionRow({
               </Text>
             </View>
           ) : null}
-          <Text
-            style={[styles.title, active ? styles.titleActive : null]}
+          <Animated.Text
+            style={[
+              styles.title,
+              active ? styles.titleActive : null,
+              { transform: [{ translateX: renameShake }] },
+            ]}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
             {title}
-          </Text>
+          </Animated.Text>
           {/* sessions.rs: the status dot, then the time, each 6dp after the one before; or the question indicator alone. */}
           {question || indicator !== null || timeLabel !== null || coordinatorBadge !== undefined ? (
             <View style={styles.trailing}>

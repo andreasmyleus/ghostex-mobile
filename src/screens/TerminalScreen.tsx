@@ -38,7 +38,7 @@ import { RenameCopy, SessionCopy } from '../copy';
 import { summarizeFailure } from '../inventory/client';
 import { useInventoryStore } from '../inventory/store';
 import type { RootStackParamList } from '../navigation/types';
-import { FORK_AGENT_ICONS } from '../sessions/sessionCommands';
+import { FORK_AGENT_ICONS, renameInitialTitle } from '../sessions/sessionCommands';
 import { useSettingsStore } from '../settings/store';
 import { acknowledgeSessionAttention } from '../terminal/attention';
 import { useTerminalStore, type TerminalTab } from '../terminal/sessions';
@@ -679,7 +679,7 @@ export default function TerminalScreen({ navigation, route }: Props) {
               title={RenameCopy.title}
               body={RenameCopy.body}
               placeholder={RenameCopy.inputHint}
-              initialValue={activeSession.title}
+              initialValue={renameInitialTitle(activeSession)}
               error={agentOverlay.error}
               confirmLabel='Rename'
               onSubmit={(value) => void submitAgentRename(value)}

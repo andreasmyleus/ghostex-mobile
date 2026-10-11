@@ -81,7 +81,7 @@ import {
   createChatCommand,
   delayedSendCommand,
   killSessionCommand,
-  renameSessionCommand,
+  renameCommandCommand,
   restoreRecentProjectCommand,
   runActionCommand,
   sessionNoteSaveCommand,
@@ -115,6 +115,8 @@ import type { OptimisticInventoryChange } from '../inventory/optimistic';
 import {
   enqueueRemoteMutation,
   renameMutation,
+  RENAME_CONFIRM_REFRESH_MS,
+  renameInitialTitle,
   runSessionCommand as runSessionCommandOnMachine,
   sessionNoteMutation,
 } from '../sessions/sessionCommands';
@@ -700,17 +702,23 @@ export default function SessionsScreen({ navigation }: Props) {
         return;
       }
       const { session } = ctx.item;
-      await runSessionCommand(
+      const result = await runSessionCommand(
         ctx.machine,
-        renameSessionCommand(
+        renameCommandCommand(
           session.sessionId,
           title,
           session.projectId.length > 0 ? session.projectId : undefined,
         ),
         { optimisticChange: renameMutation(session.sessionId, title) },
       );
+      // gxserver shows the new name until the agent confirms it or the window runs out; one
+      // refresh right after the window brings a refused name back (and its shake) without
+      // waiting for the next poll.
+      if (result !== null) {
+        setTimeout(() => void refreshMachine(ctx.machine), RENAME_CONFIRM_REFRESH_MS);
+      }
     },
-    [runSessionCommand],
+    [refreshMachine, runSessionCommand],
   );
 
   /**
@@ -1485,7 +1493,7 @@ export default function SessionsScreen({ navigation }: Props) {
           title={RenameCopy.title}
           body={RenameCopy.body}
           placeholder={RenameCopy.inputHint}
-          initialValue={overlay.ctx.item.session.title}
+          initialValue={renameInitialTitle(overlay.ctx.item.session)}
           error={overlay.error}
           confirmLabel="Rename"
           onSubmit={(value) => void submitRename(overlay.ctx, value)}

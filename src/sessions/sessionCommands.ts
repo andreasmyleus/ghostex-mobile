@@ -16,6 +16,7 @@ import {
 import { useInventoryStore } from '../inventory/store';
 import type { MachineRecord } from '../machines/store';
 import { useTerminalStore } from '../terminal/sessions';
+import type { GhostexSession } from '../contract/mobileSummary';
 
 /** Agent icons whose sessions gxserver can fork (desktop sidebar parity). */
 export const FORK_AGENT_ICONS = ['codex', 'claude', 'pi', 'empryo'];
@@ -87,6 +88,22 @@ export function sessionNoteMutation(
     patch: { sessionNote },
     confirmPatch: { sessionNote },
   };
+}
+
+/**
+ * When to look again after a rename: gxserver shows the new name for 8 seconds while the agent
+ * confirms it, then puts the reported name back and publishes the refused one as
+ * `renameFailedTitle` (server/src/presentation/session_attributes.rs).
+ */
+export const RENAME_CONFIRM_REFRESH_MS = 8_500;
+
+/**
+ * CDXC:SessionTitles 2026-10-12 DECISION: User: after a rename the agent never confirmed, "the
+ * user can rename again and he should see the new name he set there and be able to send it
+ * again". Rename opens with that name until gxserver drops it (a confirmed or newer rename).
+ */
+export function renameInitialTitle(session: GhostexSession): string {
+  return session.renameFailedTitle.length > 0 ? session.renameFailedTitle : session.title;
 }
 
 export function renameMutation(sessionId: string, title: string): OptimisticInventoryChange {

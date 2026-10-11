@@ -115,6 +115,22 @@ export function renameSessionCommand(sessionId: string, title: string, projectId
 }
 
 /**
+ * The session list's Rename: `ghostex rename-command --session-id <id>
+ * [--project-id <id>] --title=<title> --json`. gxserver records the title and,
+ * for an agent session, types the agent's own rename command itself (waking a
+ * sleeping session to deliver it), so the agent keeps the name instead of
+ * replacing it with its own on the next title sync. The new name shows at once
+ * and gxserver reports a rename the agent never confirmed as
+ * `renameFailedTitle` (CDXC:SessionTitles 2026-10-12).
+ */
+export function renameCommandCommand(sessionId: string, title: string, projectId?: string): string {
+  return (
+    `ghostex rename-command --session-id ${shellQuote(requireId(sessionId, 'session id'))}` +
+    `${projectFlag(projectId)} --title=${shellQuote(title)} --json`
+  );
+}
+
+/**
  * Agent-aware rename: `ghostex request-session-rename --session-id <id>
  * --project-id <id> --title=<title> [--agent-name=<agent>] --json`.
  *

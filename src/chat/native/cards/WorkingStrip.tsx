@@ -19,7 +19,7 @@ import { Glyph, Spark } from './icons';
 import { arr, isTrue, num, obj, str } from './json';
 import type { JsonRecord } from './json';
 import { MONO_FONT, themedStyles, useTranscriptTheme } from '../transcript/theme';
-import { CardHeader, PulseDot, SWEEP_EASING, Spinner, StatusCard, useLoop } from './primitives';
+import { CARD_TEXT_SIZE, CardHeader, PulseDot, SWEEP_EASING, Spinner, StatusCard, useLoop } from './primitives';
 
 /** `packages/gx-chat-core/visual/working-strip.json`. */
 const VISUAL = {
@@ -415,7 +415,7 @@ const useStyles = themedStyles((P) => ({
     flex: 1,
     minWidth: 0,
     color: P.cardMuted,
-    fontSize: 12,
+    fontSize: CARD_TEXT_SIZE,
   },
   backgroundIndent: {
     paddingLeft: 22,
@@ -443,8 +443,9 @@ const useStyles = themedStyles((P) => ({
     fontSize: 14,
     lineHeight: 21,
   },
+  /** The Threads header title's weight (`CardHeader` `headerTitle`), not bold. */
   backgroundTitleStrong: {
-    fontWeight: '600',
+    fontWeight: '500',
   },
   backgroundCommand: {
     marginTop: 2,

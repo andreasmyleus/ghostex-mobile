@@ -13,7 +13,7 @@ import { useSettingsStore } from '../../../settings/store';
 import { Glyph } from './icons';
 import { arr, asJson, isTrue, num, obj, str } from './json';
 import { themedStyles, useTranscriptTheme } from '../transcript/theme';
-import { CardHeader, PulseDot, Spinner, StatusCard } from './primitives';
+import { CARD_TEXT_SIZE, CardHeader, PulseDot, Spinner, StatusCard } from './primitives';
 
 export function AgentTasksPanel({ chat, document }: { chat: RustChat; document: ChatDocument }) {
   const styles = useStyles();
@@ -307,11 +307,12 @@ const useStyles = themedStyles((P) => ({
   fill: {
     width: '100%',
   },
+  /** The header's muted detail, the title's size (desktop `panel_card.rs`). */
   meta: {
     flex: 1,
     minWidth: 0,
     color: P.cardMuted,
-    fontSize: 12,
+    fontSize: CARD_TEXT_SIZE,
   },
   bar: {
     alignSelf: 'center',

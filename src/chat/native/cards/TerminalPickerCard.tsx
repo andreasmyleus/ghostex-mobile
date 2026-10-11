@@ -152,7 +152,7 @@ export function PassthroughCard({
       </ScrollView>
     </View>,
     <Text key="hint" style={styles.hint}>
-      {str(passthrough, 'hint')}
+      The buttons below send keys to the agent's terminal.
     </Text>
   );
   if (typeof document.noticeError === 'string') {
@@ -166,6 +166,8 @@ export function PassthroughCard({
     [
       ['up', '↑'],
       ['down', '↓'],
+      ['left', '←'],
+      ['right', '→'],
       ['enter', 'Enter'],
       ['escape', 'Esc'],
     ] as const

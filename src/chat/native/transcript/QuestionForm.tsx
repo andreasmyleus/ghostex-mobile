@@ -70,17 +70,20 @@ export function QuestionForm({ id, source }: { id: string; source: string }) {
   const status =
     phase === 'answered'
       ? 'Sent to the agent.'
-      : phase === 'sending'
+      : phase === 'queued'
+        ? "Queued: it goes to the agent once it's ready."
+        : phase === 'sending'
         ? 'Sending…'
         : sendError.length > 0
           ? sendError
           : 'Questions you leave blank are sent as unanswered.';
+  const sendLabel = phase === 'answered' ? 'Sent' : phase === 'queued' ? 'Queued' : str(form, 'submit');
   const footer = (
     <View style={styles.footer}>
       <Text style={[styles.status, { color: enabled && sendError.length > 0 ? theme.error : theme.muted }]}>{status}</Text>
       <Pressable
         accessibilityRole='button'
-        accessibilityLabel={phase === 'answered' ? 'Sent' : str(form, 'submit')}
+        accessibilityLabel={sendLabel}
         accessibilityState={{ disabled: !canSend }}
         disabled={!canSend}
         hitSlop={6}
@@ -91,7 +94,7 @@ export function QuestionForm({ id, source }: { id: string; source: string }) {
           !canSend && styles.disabled,
         ]}
       >
-        <Text style={{ color: theme.foreground, fontSize: 14 }}>{phase === 'answered' ? 'Sent' : str(form, 'submit')}</Text>
+        <Text style={{ color: theme.foreground, fontSize: 14 }}>{sendLabel}</Text>
       </Pressable>
     </View>
   );

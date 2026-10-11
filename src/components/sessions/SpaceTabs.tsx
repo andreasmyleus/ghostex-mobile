@@ -25,7 +25,7 @@ import {
 } from '../../spaces/otherSpace';
 import type { SessionCounts } from '../../contract/grouping';
 import type { SpaceRowItem } from '../../spaces/spaceFilter';
-import { GhostexPalette, GhostexRadii, SidebarPalette } from '../../theme/palette';
+import { GhostexPalette, GhostexRadii, GhostexStrokeWidth, SidebarPalette } from '../../theme/palette';
 import StatusDotStack from './StatusDotStack';
 
 const OTHER_ROW_ITEM: SpaceRowItem = {
@@ -126,6 +126,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingRight: 8,
   },
   chip: {
     flexDirection: 'row',
@@ -135,6 +136,8 @@ const styles = StyleSheet.create({
     maxWidth: 180,
     paddingHorizontal: 10,
     borderRadius: GhostexRadii.pill,
+    borderWidth: GhostexStrokeWidth,
+    borderColor: SidebarPalette.HEADER_BUTTON_BORDER,
     backgroundColor: SidebarPalette.HEADER_BUTTON_BG,
     overflow: 'hidden',
   },

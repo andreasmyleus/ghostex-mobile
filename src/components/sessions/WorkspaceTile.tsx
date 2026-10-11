@@ -1,7 +1,7 @@
 /**
  * The workspace tile at the left end of the Space row, the phone's take on the desktop's split
  * button (apps/desktop/src/app/native_sidebar/workspace_tile.rs): the shown workspace's letter on
- * its color, then a chevron part, in a box sized and filled like a Space chip. Tapping the letter
+ * its color, then a chevron part, in a box sized and bordered like a Space chip. Tapping the letter
  * switches to the other workspace (`workspaceSwitchTarget`), or opens the menu when there is only
  * one; the chevron opens the workspace menu (`workspaceMenuItems`), which lists the computer's
  * workspaces with the shown one checked.
@@ -103,6 +103,8 @@ const styles = StyleSheet.create({
     height: TILE_HEIGHT,
     flexShrink: 0,
     borderRadius: GhostexRadii.pill,
+    borderWidth: GhostexStrokeWidth,
+    borderColor: SidebarPalette.HEADER_BUTTON_BORDER,
     backgroundColor: SidebarPalette.HEADER_BUTTON_BG,
     overflow: 'hidden',
   },

@@ -19,7 +19,8 @@ import { DeliveryIndicator, hasReplyActions, isFlushReply, ReplyActions, UserAct
 import { PageAnswersCard } from './PageAnswersCard';
 import { openTranscriptMenu } from './transcriptMenuStore';
 import { useDisclosure } from './state';
-import { estimatedLines, InterAgentCard, SentAgentMessageCards, StartupDelivery, SuppressedRow, SystemCard, TerminalToolRow } from './SystemRows';
+import { InterAgentCard, SentAgentMessageCards } from './AgentMessageCards';
+import { estimatedLines, StartupDelivery, SuppressedRow, SystemCard, TerminalToolRow } from './SystemRows';
 import { PROSE_LINE, PROSE_SIZE } from './theme';
 import { SideQuestionRow } from './SideQuestionRow';
 import { ShellCommandCard, ToolRows } from './ToolRows';

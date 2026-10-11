@@ -5,6 +5,11 @@
  *
  * The "Show terminal output" disclosure is not drawn: React and desktop hide it in chats narrower
  * than 1070px, which every phone is.
+ *
+ * CDXC:SessionChat 2026-10-11 DECISION: User picked the proposed notices design: a notice is a tone card (ToneCard.tsx) washed in
+ * the tone the chat core gives it, with its actions in the footer (the account switch first and filled, Terminal view beside it,
+ * Dismiss quiet at the right end). The `/resume` picker, pass-through and side-question cards keep their own shells.
+ * SEE-ALSO: apps/desktop/src/app/native_chat/notice.rs, packages/gx-chat-core/src/questions/notice_tone.rs
  */
 
 import { useEffect, useState, type ReactNode } from 'react';
@@ -12,20 +17,11 @@ import { ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-na
 
 import type { ChatDocument } from '../../rust/document';
 import type { RustChat } from '../../rust/useRustChat';
-import type { GlyphName } from './icons';
 import { arr, asJson, isTrue, num, obj, str } from './json';
 import { MONO_FONT, themedStyles, useTranscriptTheme } from '../transcript/theme';
-import {
-  CARD_TEXT_SIZE,
-  CHOICE_ROW_CHROME,
-  CardHeader,
-  ChatButton,
-  ChoiceRow,
-  ChoiceRowLabelMeasure,
-  StatusCard,
-  useCardText,
-  useWellStyle,
-} from './primitives';
+import { CARD_TEXT_SIZE, CHOICE_ROW_CHROME, ChoiceRow, ChoiceRowLabelMeasure, useCardText, useWellStyle } from './primitives';
+import { Glyph } from './icons';
+import { ToneButton, ToneCard } from './ToneCard';
 import { PanelBlocks } from './PanelBlocks';
 import { SideQuestionCard } from './SideQuestionCard';
 import { PassthroughCard, TerminalPickerCard } from './TerminalPickerCard';
@@ -71,16 +67,21 @@ export function NoticeCard({
     }
     const copyTitle = str(obj(obj(dialog.presentation)?.copy), 'title');
     const panelTitle = str(obj(dialog.presentation), 'title');
+    const parts = terminalDialogParts(chat, dialog, busy, dialogInput, look);
     return (
-      <StatusCard
-        header={<CardHeader icon="terminal-2" title={copyTitle || panelTitle || str(dialog, 'title')} />}
-        {...terminalDialogParts(chat, dialog, busy, dialogInput, look)}
+      <ToneCard
+        tone={str(notice, 'tone')}
+        title={copyTitle || panelTitle || str(dialog, 'title')}
+        body={parts.body}
+        footerEnd={parts.actions}
       />
     );
   }
 
   const body: ReactNode[] = [];
+  // The notice's own actions lead the footer; a live dialog's buttons and Dismiss sit at its right end.
   const actions: ReactNode[] = [];
+  const footerEnd: ReactNode[] = [];
   if (!collapsed && typeof notice.detail === 'string') {
     body.push(
       <Text key="detail" style={cardText.prose}>
@@ -145,13 +146,13 @@ export function NoticeCard({
   if (!collapsed && !rateLimit && dialog !== null) {
     const parts = terminalDialogParts(chat, dialog, busy, dialogInput, look);
     body.push(...parts.body);
-    actions.push(...parts.actions);
+    footerEnd.push(...parts.actions);
   }
   // Only sign-in and usage-limit notices offer the account panel (notice.rs).
   const kind = str(notice, 'kind');
   if (!collapsed && obj(document.accountPanel) !== null && (kind === 'loginExpired' || kind === 'usageLimit') && onHostAction) {
     actions.push(
-      <ChatButton key="switch-account" icon="switch-horizontal" label="Switch account" onPress={() => onHostAction('switchAccount')} />
+      <ToneButton key="switch-account" kind="primary" icon="switch-horizontal" label="Switch account" onPress={() => onHostAction('switchAccount')} />
     );
   }
   for (const action of arr(notice.actions)) {
@@ -159,21 +160,23 @@ export function NoticeCard({
     if (str(action, 'kind') === 'switchToTerminal') {
       if (onHostAction) {
         actions.push(
-          <ChatButton key={`action:${str(action, 'id')}`} icon="terminal-2" label="Terminal View" onPress={() => onHostAction('terminalView')} />
+          <ToneButton key={`action:${str(action, 'id')}`} kind="secondary" icon="terminal-2" label="Terminal view" onPress={() => onHostAction('terminalView')} />
         );
       }
       continue;
     }
+    // The first action the chat answers itself is the one filled button when no account switch took that place.
     actions.push(
-      <ChatButton
+      <ToneButton
         key={`action:${str(action, 'id')}`}
+        kind={actions.length === 0 ? 'primary' : 'secondary'}
         label={str(action, 'label')}
         onPress={() => dispatch({ type: 'answer', answer: asJson(obj(action)?.answer) })}
       />
     );
   }
   if ((notice.choices === null || notice.choices === undefined) && (notice.dialog === null || notice.dialog === undefined)) {
-    actions.push(<ChatButton key="dismiss" label="Dismiss" onPress={() => dispatch({ type: 'dismissNotice' })} />);
+    footerEnd.push(<ToneButton key="dismiss" kind="ghost" label="Dismiss" onPress={() => dispatch({ type: 'dismissNotice' })} />);
   }
   if (typeof document.noticeError === 'string') {
     body.push(
@@ -182,19 +185,18 @@ export function NoticeCard({
       </Text>
     );
   }
-  const severity = str(notice, 'severity');
-  const icon: GlyphName = severity === 'error' ? 'alert-circle' : severity === 'warning' ? 'alert-triangle' : 'info-circle';
-  const header = (
-    <CardHeader
-      icon={icon}
+  return (
+    <ToneCard
+      tone={str(notice, 'tone')}
       title={str(notice, 'title')}
-      chevron={answerable ? (collapsed ? 'closed' : 'open') : undefined}
-      hasBody={body.length > 0}
+      trailing={answerable ? <Glyph name={collapsed ? 'chevron-right' : 'chevron-down'} size={14} color={look.P.muted} /> : undefined}
+      body={body}
+      footerStart={actions}
+      footerEnd={footerEnd}
       accessibilityLabel={collapsed ? 'Show all options' : 'Show less'}
-      onPress={answerable ? () => setExpandedKey(collapsed ? key : null) : undefined}
+      onPressHeader={answerable ? () => setExpandedKey(collapsed ? key : null) : undefined}
     />
   );
-  return <StatusCard header={header} body={body} actions={actions} />;
 }
 
 /** The themed styles a terminal dialog draws with, read by the card that owns it. */
@@ -224,8 +226,9 @@ function terminalDialogParts(
       </Text>
     );
     actions.push(
-      <ChatButton
+      <ToneButton
         key="restore"
+        kind="primary"
         label={busy ? 'Restoring chat…' : 'Restore chat'}
         onPress={() => dispatch({ type: 'answer', answer: { kind: 'terminalDialog', dialogId, dialogAction: 'cancel' } })}
       />
@@ -280,7 +283,7 @@ function terminalDialogParts(
         placeholderTextColor={P.placeholder}
       />
     );
-    actions.push(<ChatButton key="submit" label={search ? 'Search' : str(presentation, 'submitLabel')} onPress={submit} />);
+    actions.push(<ToneButton key="submit" kind="primary" label={search ? 'Search' : str(presentation, 'submitLabel')} onPress={submit} />);
   }
   if (input === 'key') {
     body.push(
@@ -309,8 +312,9 @@ function terminalDialogParts(
   }
   for (const action of arr(presentation?.actions)) {
     actions.push(
-      <ChatButton
+      <ToneButton
         key={`dialog-action:${str(action, 'action')}`}
+        kind="secondary"
         label={str(action, 'label')}
         onPress={() =>
           dispatch({ type: 'answer', answer: { kind: 'terminalDialog', dialogId, dialogAction: asJson(obj(action)?.action) } })

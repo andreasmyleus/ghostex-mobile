@@ -1,0 +1,520 @@
+/**
+ * The card every question the chat shows is drawn in: an agent's own question tool
+ * (`QuestionCard.tsx`) and its answered record (`QuestionExchangeCards.tsx`), a ```questions form
+ * (`transcript/QuestionForm.tsx`) and the answers sent from a form or an HTML page
+ * (`transcript/PageAnswersCard.tsx`). A tinted tile and a two-line title lead it, the options are
+ * radio or checkbox rows that light up in the asking colour, and the answers come back as green chips.
+ *
+ * CDXC:SessionChat 2026-10-11 SEE-ALSO:
+ * The desktop's copy is apps/desktop/src/app/native_chat/ask_card.rs; the HTML question pages draw it in server/src/visual_pages/kit.rs. Change them together.
+ */
+
+import type { ReactNode } from 'react';
+import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+
+import { Glyph, type GlyphName } from './icons';
+import { MONO_FONT, themedStyles, useTranscriptTheme, type TranscriptTheme } from '../transcript/theme';
+
+/** What a card's tile says about the question: waiting, answered, or closed without an answer. */
+export type AskTone = 'ask' | 'answered' | 'quiet';
+
+/** The colour a waiting question and the option the reader picked share. */
+export function askColor(light: boolean): string {
+  return light ? '#b45309' : '#fbbf24';
+}
+
+/** The green that marks an answer. */
+export function answeredColor(light: boolean): string {
+  return light ? '#059669' : '#34d399';
+}
+
+export function toneColor(tone: AskTone, P: TranscriptTheme): string {
+  return tone === 'ask' ? askColor(P.light) : tone === 'answered' ? answeredColor(P.light) : P.muted;
+}
+
+/** `#rrggbb` at an alpha. */
+export function tint(hex: string, alpha: number): string {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+  return `${hex}${Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0')}`;
+}
+
+/** The card's shell around its head, its body and its footer band. */
+export function AskCard({
+  head,
+  children,
+  footer,
+  style,
+}: {
+  head: ReactNode;
+  children?: ReactNode;
+  footer?: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const styles = useStyles();
+  const hasBody = children !== undefined && children !== null && children !== false;
+  return (
+    <View style={[styles.card, style]}>
+      {head}
+      {hasBody ? <View style={styles.body}>{children}</View> : null}
+      {footer !== undefined && footer !== null ? <View style={styles.footer}>{footer}</View> : null}
+    </View>
+  );
+}
+
+/** The 28px tile that leads the card's head. */
+export function AskTile({ icon, tone }: { icon: GlyphName; tone: AskTone }) {
+  const styles = useStyles();
+  const P = useTranscriptTheme();
+  const hue = toneColor(tone, P);
+  return (
+    <View style={[styles.tile, { backgroundColor: tint(hue, 0.15), borderColor: tint(hue, 0.22) }]}>
+      <Glyph name={icon} size={15} color={hue} />
+    </View>
+  );
+}
+
+/**
+ * The head row: tile, title over a muted detail line, then whatever trails it. With `onPress` the
+ * whole row folds the card and lights edge to edge when pressed.
+ */
+export function AskHead({
+  icon,
+  tone,
+  title,
+  detail,
+  trailing,
+  chevron,
+  onPress,
+  accessibilityLabel,
+}: {
+  icon: GlyphName;
+  tone: AskTone;
+  title: string;
+  detail?: string;
+  trailing?: ReactNode;
+  /** `open` / `closed` draws the fold chevron. */
+  chevron?: 'open' | 'closed';
+  onPress?: () => void;
+  accessibilityLabel?: string;
+}) {
+  const styles = useStyles();
+  const P = useTranscriptTheme();
+  const content = (
+    <>
+      <AskTile icon={icon} tone={tone} />
+      <View style={styles.titles}>
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
+        {detail !== undefined && detail.length > 0 ? (
+          <Text style={styles.detail} numberOfLines={1}>
+            {detail}
+          </Text>
+        ) : null}
+      </View>
+      {trailing}
+      {chevron !== undefined ? <Glyph name={chevron === 'open' ? 'chevron-up' : 'chevron-down'} size={14} color={P.muted} /> : null}
+    </>
+  );
+  if (onPress === undefined) return <View style={styles.head}>{content}</View>;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      style={({ pressed }) => [styles.head, pressed && { backgroundColor: P.pressedFill }]}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
+/** One short bar per question, the asked ones lit: the progress through a multi-question ask. */
+export function ProgressDots({ index, count }: { index: number; count: number }) {
+  const styles = useStyles();
+  const P = useTranscriptTheme();
+  const hue = askColor(P.light);
+  return (
+    <View style={styles.dots}>
+      {Array.from({ length: count }, (_, dot) => (
+        <View key={dot} style={[styles.dot, { backgroundColor: dot <= index ? hue : P.ink(0.12) }]} />
+      ))}
+    </View>
+  );
+}
+
+/** A muted keycap: an option's letter. */
+export function Keycap({ label, lit }: { label: string; lit: boolean }) {
+  const styles = useStyles();
+  const P = useTranscriptTheme();
+  return <Text style={[styles.keycap, { color: lit ? P.foreground : P.muted }]}>{label}</Text>;
+}
+
+/** One option the reader can pick: radio or checkbox, label over its detail, an optional keycap. */
+export function AskOption({
+  label,
+  detail,
+  picked,
+  multiple,
+  keyLabel,
+  recommended,
+  other,
+  enabled,
+  answered,
+  onPress,
+}: {
+  label: string;
+  detail?: string;
+  picked: boolean;
+  multiple: boolean;
+  keyLabel?: string;
+  recommended?: boolean;
+  /** "Other / none of these": its label stays muted until it is picked. */
+  other?: boolean;
+  enabled: boolean;
+  /** The question was answered and sent: a pick reads green, like the answers card. */
+  answered?: boolean;
+  onPress: () => void;
+}) {
+  const styles = useStyles();
+  const P = useTranscriptTheme();
+  const hue = answered === true ? answeredColor(P.light) : askColor(P.light);
+  const showDetail = detail !== undefined && detail.length > 0 && detail !== label;
+  return (
+    <Pressable
+      accessibilityRole={multiple ? 'checkbox' : 'radio'}
+      accessibilityLabel={label}
+      accessibilityState={{ checked: picked, disabled: !enabled }}
+      disabled={!enabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.option,
+        {
+          borderColor: picked ? tint(hue, 0.55) : P.controlBorder,
+          backgroundColor: picked ? tint(hue, 0.08) : pressed ? P.pressedFill : P.light ? P.background : P.input,
+        },
+        !enabled && !picked && styles.dimmed,
+      ]}
+    >
+      <View style={[styles.mark, multiple ? styles.checkbox : styles.radio, { borderColor: picked ? hue : P.mutedInk(0.7) }, picked && multiple && { backgroundColor: hue }]}>
+        {picked && multiple ? <Glyph name="check" size={11} color={P.background} /> : null}
+        {picked && !multiple ? <View style={[styles.radioDot, { backgroundColor: hue }]} /> : null}
+      </View>
+      <View style={styles.optionBody}>
+        <View style={styles.optionLine}>
+          <Text style={[styles.optionLabel, { color: other === true && !picked ? P.cardMuted : P.foreground }]}>{label}</Text>
+          {recommended === true ? <Text style={styles.recommended}>Recommended</Text> : null}
+        </View>
+        {showDetail ? <Text style={styles.optionDetail}>{detail}</Text> : null}
+      </View>
+      {keyLabel !== undefined ? <Keycap label={keyLabel} lit={picked} /> : null}
+    </Pressable>
+  );
+}
+
+/** The filled button that moves the ask on (Next, Send answer, Send). */
+export function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+  const styles = useStyles();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: disabled === true }}
+      disabled={disabled === true}
+      onPress={onPress}
+      hitSlop={6}
+      style={({ pressed }) => [styles.primary, pressed && styles.primaryPressed, disabled === true && styles.disabled]}
+    >
+      <Text style={styles.primaryLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/** An answer as a green chip with its check. */
+export function AnswerChip({ label }: { label: string }) {
+  const styles = useStyles();
+  const P = useTranscriptTheme();
+  const good = answeredColor(P.light);
+  return (
+    <View style={[styles.chip, { backgroundColor: tint(good, 0.1), borderColor: tint(good, 0.28) }]}>
+      <View style={styles.chipCheck}>
+        <Glyph name="check" size={12} color={good} />
+      </View>
+      <Text selectable style={styles.chipLabel}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+/** The muted words beside or under an answer chip. */
+export function AnswerAside({ children, italic }: { children: string; italic?: boolean }) {
+  const styles = useStyles();
+  return <Text style={[styles.aside, italic === true && styles.italic]}>{children}</Text>;
+}
+
+/**
+ * One answered question in a receipt: its number, the question (muted), and under it the answer
+ * chips and whatever follows them.
+ */
+export function ReceiptRow({
+  number,
+  question,
+  answer,
+  below,
+  first,
+}: {
+  number: number;
+  question: string;
+  answer: ReactNode;
+  below?: ReactNode;
+  first: boolean;
+}) {
+  const styles = useStyles();
+  return (
+    <View style={[styles.receiptRow, !first && styles.receiptDivider]}>
+      <Text style={styles.number}>{number}</Text>
+      <View style={styles.receiptBody}>
+        {question.length > 0 ? <Text style={styles.receiptQuestion}>{question}</Text> : null}
+        <View style={styles.answerLine}>{answer}</View>
+        {below}
+      </View>
+    </View>
+  );
+}
+
+const useStyles = themedStyles((P) => ({
+  card: {
+    width: '100%',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: P.inputBorder,
+    backgroundColor: P.cardPanel,
+    overflow: 'hidden',
+  },
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  tile: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titles: {
+    flex: 1,
+    minWidth: 0,
+  },
+  title: {
+    color: P.foreground,
+    fontSize: 13.5,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  detail: {
+    color: P.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  body: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+  },
+  footer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: P.light ? P.border : 'rgba(255,255,255,0.04)',
+    backgroundColor: P.cardFooter,
+  },
+  dots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  dot: {
+    width: 18,
+    height: 4,
+    borderRadius: 2,
+  },
+  keycap: {
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 5,
+    marginTop: 1,
+    borderWidth: 1,
+    borderRadius: 5,
+    borderColor: P.ink(0.12),
+    backgroundColor: P.light ? P.background : 'rgba(14,14,14,0.5)',
+    fontFamily: MONO_FONT,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    overflow: 'hidden',
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  mark: {
+    width: 16,
+    height: 16,
+    marginTop: 2,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radio: {
+    borderRadius: 8,
+  },
+  checkbox: {
+    borderRadius: 4,
+  },
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  optionBody: {
+    flex: 1,
+    minWidth: 0,
+    gap: 1,
+  },
+  optionLine: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+  },
+  optionLabel: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  optionDetail: {
+    color: P.muted,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  recommended: {
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    overflow: 'hidden',
+    borderColor: P.light ? P.controlPrimary : 'rgba(229,229,229,0.6)',
+    color: P.controlPrimary,
+    fontSize: 10.5,
+    lineHeight: 16,
+    fontWeight: '600',
+  },
+  dimmed: {
+    opacity: 0.55,
+  },
+  primary: {
+    minHeight: 32,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: P.controlPrimary,
+    backgroundColor: P.controlPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryPressed: {
+    opacity: 0.85,
+  },
+  primaryLabel: {
+    color: P.background,
+    fontSize: 13.5,
+    fontWeight: '500',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    maxWidth: '100%',
+    paddingLeft: 8,
+    paddingRight: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  chipCheck: {
+    paddingTop: 4,
+  },
+  chipLabel: {
+    flexShrink: 1,
+    color: P.foreground,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  aside: {
+    flexShrink: 1,
+    color: P.muted,
+    fontSize: 12.5,
+    lineHeight: 18,
+  },
+  italic: {
+    fontStyle: 'italic',
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingVertical: 10,
+  },
+  receiptDivider: {
+    borderTopWidth: 1,
+    borderTopColor: P.ink(0.05),
+  },
+  number: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: P.ink(0.07),
+    color: P.muted,
+    fontSize: 11,
+    lineHeight: 22,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  receiptBody: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  receiptQuestion: {
+    color: P.muted,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  answerLine: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+  },
+}));

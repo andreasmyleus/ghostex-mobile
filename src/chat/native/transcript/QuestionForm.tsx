@@ -10,15 +10,14 @@
  */
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { Json } from '../../rust/document';
 import { useTranscriptEnv } from './context';
-import { Glyph } from './icons';
+import { AskCard, AskHead, AskOption, PrimaryButton, type AskTone } from '../cards/askCard';
+import type { GlyphName } from '../cards/icons';
 import { arr, obj, str, type JsonRecord } from './json';
-import { answeredColor } from './PageAnswersCard';
-import { MONO_FONT, PROSE_LINE, PROSE_SIZE } from './theme';
-import { StatusCard } from './SystemRows';
+import { MONO_FONT } from './theme';
 
 /** The document's `questionForms`, by form id. */
 const FormsContext = createContext<{ [id: string]: Json }>({});
@@ -42,27 +41,31 @@ export function QuestionForm({ id, source }: { id: string; source: string }) {
   const phase = str(form, 'state');
   const enabled = phase === 'open';
   const error = str(form, 'error');
-  const good = answeredColor(theme.light);
-  const header = (
-    <View style={styles.header}>
-      <View style={styles.headerGlyph}>
-        <Glyph name='help-circle' size={14} color={theme.muted} />
-      </View>
-      <Text style={[styles.title, { color: theme.foreground }]}>{str(form, 'title')}</Text>
-      {phase === 'answered' ? (
-        <View style={[styles.answered, { backgroundColor: `${good}24` }]}>
-          <Glyph name='check' size={11} color={good} />
-          <Text style={[styles.answeredLabel, { color: good }]}>Answered</Text>
-        </View>
-      ) : null}
-    </View>
-  );
+  const questions = arr(form.questions);
+  // The tile carries the form's state: amber while it waits, green once answered (desktop question_form.rs).
+  const tone: AskTone = error.length > 0 ? 'quiet' : phase === 'answered' ? 'answered' : 'ask';
+  const icon: GlyphName = error.length > 0 ? 'alert-circle' : phase === 'answered' ? 'check' : 'help-circle';
+  const detail =
+    error.length > 0
+      ? "Couldn't be shown"
+      : phase === 'answered'
+        ? 'Sent to the agent'
+        : phase === 'sending'
+          ? 'Sending…'
+          : phase === 'queued'
+            ? 'Queued'
+            : questions.length === 1
+              ? '1 question'
+              : `${questions.length} questions`;
+  const head = <AskHead icon={icon} tone={tone} title={str(form, 'title') || 'Questions'} detail={detail} />;
   if (error.length > 0) {
     return (
-      <StatusCard header={header}>
-        <Text style={{ color: theme.error }}>These questions could not be shown: {error}</Text>
-        <Text style={[styles.source, { color: theme.cardMuted }]}>{source}</Text>
-      </StatusCard>
+      <AskCard head={head}>
+        <View style={styles.errorBody}>
+          <Text style={{ color: theme.error }}>These questions could not be shown: {error}</Text>
+          <Text style={[styles.source, { color: theme.cardMuted }]}>{source}</Text>
+        </View>
+      </AskCard>
     );
   }
   const canSend = form.canSend === true;
@@ -79,40 +82,28 @@ export function QuestionForm({ id, source }: { id: string; source: string }) {
           : 'Questions you leave blank are sent as unanswered.';
   const sendLabel = phase === 'answered' ? 'Sent' : phase === 'queued' ? 'Queued' : str(form, 'submit');
   const footer = (
-    <View style={styles.footer}>
+    <>
       <Text style={[styles.status, { color: enabled && sendError.length > 0 ? theme.error : theme.muted }]}>{status}</Text>
-      <Pressable
-        accessibilityRole='button'
-        accessibilityLabel={sendLabel}
-        accessibilityState={{ disabled: !canSend }}
-        disabled={!canSend}
-        hitSlop={6}
-        onPress={() => dispatch({ type: 'formSend', form: id })}
-        style={({ pressed }) => [
-          styles.send,
-          { borderColor: theme.border, backgroundColor: pressed ? theme.input : theme.light ? theme.background : 'transparent' },
-          !canSend && styles.disabled,
-        ]}
-      >
-        <Text style={{ color: theme.foreground, fontSize: 14 }}>{sendLabel}</Text>
-      </Pressable>
-    </View>
+      <PrimaryButton label={sendLabel} disabled={!canSend} onPress={() => dispatch({ type: 'formSend', form: id })} />
+    </>
   );
   const drafts = arr(form.drafts);
   return (
-    <StatusCard header={header} footer={footer}>
-      {arr(form.questions).map((question, index) => (
-        <FormQuestion
-          key={index}
-          formId={id}
-          index={index}
-          question={obj(question)}
-          draft={obj(drafts[index])}
-          otherLabel={str(form, 'otherLabel')}
-          enabled={enabled}
-        />
+    <AskCard head={head} footer={footer}>
+      {questions.map((question, index) => (
+        <View key={index} style={index > 0 ? [styles.later, { borderTopColor: theme.ink(0.06) }] : undefined}>
+          <FormQuestion
+            formId={id}
+            index={index}
+            question={obj(question)}
+            draft={obj(drafts[index])}
+            otherLabel={str(form, 'otherLabel')}
+            enabled={enabled}
+            answered={phase === 'answered'}
+          />
+        </View>
       ))}
-    </StatusCard>
+    </AskCard>
   );
 }
 
@@ -123,6 +114,7 @@ function FormQuestion({
   draft,
   otherLabel,
   enabled,
+  answered,
 }: {
   formId: string;
   index: number;
@@ -130,6 +122,7 @@ function FormQuestion({
   draft: JsonRecord | null;
   otherLabel: string;
   enabled: boolean;
+  answered: boolean;
 }) {
   const { theme, dispatch } = useTranscriptEnv();
   const tag = str(question, 'tag');
@@ -162,30 +155,29 @@ function FormQuestion({
       {!isText && multiple ? <Text style={[styles.hint, { color: theme.muted }]}>Pick any that apply.</Text> : null}
       {!isText
         ? choices.map((choice, choiceIndex) => (
-            <ChoiceRow
+            <AskOption
               key={choiceIndex}
-              number={choiceIndex}
+              keyLabel={letter(choiceIndex)}
               label={str(choice, 'label')}
               detail={str(choice, 'detail')}
               recommended={obj(choice)?.recommended === true}
               picked={picked.has(choiceIndex)}
               multiple={multiple}
-              other={false}
               enabled={enabled}
+              answered={answered}
               onPress={() => pick(choiceIndex)}
             />
           ))
         : null}
       {!isText ? (
-        <ChoiceRow
-          number={choices.length}
+        <AskOption
+          keyLabel={letter(choices.length)}
           label={otherLabel}
-          detail=''
-          recommended={false}
           picked={draft?.otherPicked === true}
           multiple={multiple}
           other
           enabled={enabled}
+          answered={answered}
           onPress={() => pick(choices.length)}
         />
       ) : null}
@@ -195,14 +187,14 @@ function FormQuestion({
           multiline
           defaultValue={written}
           placeholder={placeholder(question, draft)}
-          placeholderTextColor={theme.muted}
+          placeholderTextColor={theme.placeholder}
           onChangeText={(text) => {
             settled.current = true;
             dispatch({ type: 'formText', form: formId, question: index, text });
           }}
           style={[
             styles.input,
-            { color: theme.foreground, borderColor: theme.border, backgroundColor: theme.light ? theme.background : 'transparent' },
+            { color: theme.foreground, borderColor: theme.inputBorder, backgroundColor: theme.light ? theme.background : theme.input },
             isText && styles.textAnswer,
           ]}
         />
@@ -217,101 +209,18 @@ function FormQuestion({
   );
 }
 
-function ChoiceRow({
-  number,
-  label,
-  detail,
-  recommended,
-  picked,
-  multiple,
-  other,
-  enabled,
-  onPress,
-}: {
-  number: number;
-  label: string;
-  detail: string;
-  recommended: boolean;
-  picked: boolean;
-  multiple: boolean;
-  other: boolean;
-  enabled: boolean;
-  onPress: () => void;
-}) {
-  const { theme } = useTranscriptEnv();
-  const primary = theme.controlPrimary;
-  return (
-    <Pressable
-      accessibilityRole={multiple ? 'checkbox' : 'radio'}
-      accessibilityLabel={label}
-      accessibilityState={{ checked: picked, disabled: !enabled }}
-      disabled={!enabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.choice,
-        {
-          borderColor: picked ? `${primary}4d` : theme.border,
-          backgroundColor: picked ? `${primary}1a` : pressed ? theme.pressed : theme.light ? theme.background : 'transparent',
-        },
-        !enabled && !picked && styles.disabled,
-      ]}
-    >
-      <View
-        style={[
-          styles.mark,
-          multiple ? styles.checkbox : styles.radio,
-          { borderColor: picked ? primary : theme.muted },
-          picked && multiple && { backgroundColor: primary },
-        ]}
-      >
-        {picked && multiple ? <Glyph name='check' size={10} color={theme.background} /> : null}
-        {picked && !multiple ? <View style={[styles.dot, { backgroundColor: primary }]} /> : null}
-      </View>
-      <View style={styles.choiceBody}>
-        <View style={styles.choiceLine}>
-          <Text style={[styles.choiceLabel, { color: other && !picked ? theme.cardMuted : theme.foreground }]}>
-            {label}
-          </Text>
-          {recommended ? (
-            <Text style={[styles.recommended, { color: primary, borderColor: `${primary}99` }]}>Recommended</Text>
-          ) : null}
-        </View>
-        {detail.length > 0 ? <Text style={[styles.detail, { color: theme.cardMuted }]}>{detail}</Text> : null}
-      </View>
-      {/* The letter the reader can refer to ("do b"), as a muted keycap at the row's end. */}
-      <Text style={[styles.keycap, { color: picked ? theme.foreground : theme.muted, borderColor: theme.border }]}>{letter(number)}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  headerGlyph: { paddingTop: 4 },
-  title: { flex: 1, fontSize: PROSE_SIZE, lineHeight: PROSE_LINE },
-  answered: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
-  answeredLabel: { fontSize: 11, fontWeight: '600' },
-  question: { gap: 6 },
+  later: { marginTop: 16, paddingTop: 16, borderTopWidth: 1 },
+  errorBody: { gap: 8 },
+  question: { gap: 8 },
   // The user's pick (desktop question_form.rs): the tag is a filled chip above the title.
   questionHead: { alignItems: 'flex-start', gap: 4 },
   tag: { fontFamily: MONO_FONT, fontSize: 10.5, lineHeight: 18, fontWeight: '500', paddingHorizontal: 7, borderRadius: 999, overflow: 'hidden' },
-  keycap: { minWidth: 20, height: 20, paddingHorizontal: 4, marginTop: 0.5, borderWidth: 1, borderRadius: 4, fontFamily: MONO_FONT, fontSize: 11.5, lineHeight: 18, fontWeight: '500', textAlign: 'center', overflow: 'hidden' },
-  questionTitle: { alignSelf: 'stretch', fontSize: 15, lineHeight: 21, fontWeight: '500' },
-  detail: { fontSize: 13, lineHeight: 18 },
+  questionTitle: { alignSelf: 'stretch', fontSize: 15, lineHeight: 22, fontWeight: '500' },
+  detail: { fontSize: 13, lineHeight: 19 },
   hint: { fontSize: 12 },
-  choice: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, borderRadius: 8 },
-  mark: { width: 16, height: 16, marginTop: 2, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  radio: { borderRadius: 8 },
-  checkbox: { borderRadius: 4 },
-  dot: { width: 7, height: 7, borderRadius: 4 },
-  choiceBody: { flex: 1, gap: 2 },
-  choiceLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
-  choiceLabel: { fontSize: 15, lineHeight: 21 },
-  recommended: { fontSize: 10.5, lineHeight: 16, fontWeight: '600', paddingHorizontal: 6, borderWidth: 1, borderRadius: 999, overflow: 'hidden' },
-  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 14, minHeight: 38, textAlignVertical: 'top' },
+  input: { borderWidth: 1, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13.5, minHeight: 38, textAlignVertical: 'top' },
   textAnswer: { minHeight: 70 },
-  footer: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   status: { flex: 1, fontSize: 12.5 },
-  send: { height: 32, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  disabled: { opacity: 0.5 },
   source: { fontFamily: MONO_FONT, fontSize: 12 },
 });

@@ -101,7 +101,7 @@ const NEEDS_APPROVAL_LABEL = 'Needs your approval';
 
 /**
  * A coordinator's Threads panel (`coordinatorThreadsPanel`, desktop `coordinator_threads.rs`): one
- * list of its threads, working ones first. Order, labels and the "N more" fold come from the core; a
+ * list of its threads, working ones first. Order, labels and the steps ("Show recent", "N more") come from the core; a
  * row opens that thread through the `openCoordinatorThread` host action.
  */
 export function CoordinatorThreadsPanel({ chat, document }: { chat: RustChat; document: ChatDocument }) {
@@ -109,8 +109,9 @@ export function CoordinatorThreadsPanel({ chat, document }: { chat: RustChat; do
   const panel = obj(document.coordinatorThreadsPanel);
   if (panel === null) return null;
   const open = panel.collapsed !== true;
-  const showAll = isTrue(panel, 'showAll');
   const moreLabel = str(panel, 'moreLabel');
+  const moreStep = typeof panel.moreStep === 'number' ? panel.moreStep : 0;
+  const emptyLabel = str(panel, 'emptyLabel');
   const header = (
     <CardHeader
       icon="users"
@@ -133,14 +134,15 @@ export function CoordinatorThreadsPanel({ chat, document }: { chat: RustChat; do
           {arr(panel.rows).map((row, index) => (
             <ThreadRow key={str(row, 'key') || String(index)} row={row} chat={chat} />
           ))}
+          {emptyLabel.length > 0 ? <Text style={styles.stale}>{emptyLabel}</Text> : null}
         </ScrollView>,
         moreLabel.length > 0 ? (
           <Text
             key="more"
             accessibilityRole="button"
-            accessibilityLabel={showAll ? 'Show fewer threads' : `Show ${moreLabel} threads`}
+            accessibilityLabel={moreStep === 0 ? 'Show fewer threads' : moreStep === 1 ? 'Show recent threads' : `Show ${moreLabel} threads`}
             style={styles.fold}
-            onPress={() => chat.dispatch({ type: 'toggleCoordinatorThreadsMore', expanded: !showAll })}
+            onPress={() => chat.dispatch({ type: 'toggleCoordinatorThreadsMore', step: moreStep })}
           >
             {moreLabel}
           </Text>

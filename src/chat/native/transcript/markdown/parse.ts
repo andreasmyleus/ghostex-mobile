@@ -30,7 +30,7 @@ const SECTION_OPEN = `${MARK}section:`;
 const SECTION_CLOSE = `${MARK}/section`;
 
 /** A marked section of an agent's reply, as the core described it (`marked_sections.rs`). */
-export type SectionMeta = { kind: string; emoji: string; name: string; label: string; labelRepeats: boolean; lead: string };
+export type SectionMeta = { kind: string; emoji: string; name: string; label: string; labelRepeats: boolean; lead: string; plain?: string };
 
 export type Inline =
   | { t: 'text'; v: string }
@@ -65,9 +65,10 @@ export type Block =
   | { t: 'questions'; id: string; source: string }
   /**
    * A marked section (`MarkedSections.tsx`): `all` is every line as written, `rest` the lines after
-   * the first and `lead` the rest of the first line, for the styles that draw their own first line.
+   * the first and `lead` the rest of the first line, for the styles that draw their own first line;
+   * `first` is the first line without its marker emoji, for the thin rule with emojis off.
    */
-  | { t: 'section'; meta: SectionMeta; all: Block[]; rest: Block[]; lead: Inline[] }
+  | { t: 'section'; meta: SectionMeta; all: Block[]; rest: Block[]; lead: Inline[]; first: Block[] }
   | { t: 'hr' };
 
 export type ParseOptions = {
@@ -226,7 +227,7 @@ class BlockParser {
         const meta = parseJson<SectionMeta | null>(line.slice(SECTION_OPEN.length), null);
         const body = lines.slice(index + 1, end);
         if (meta !== null) {
-          out.push({ t: 'section', meta, all: this.blocks(body), rest: this.blocks(body.slice(1)), lead: this.inline(meta.lead) });
+          out.push({ t: 'section', meta, all: this.blocks(body), rest: this.blocks(body.slice(1)), lead: this.inline(meta.lead), first: this.blocks([meta.plain ?? body[0] ?? '']) });
         } else {
           out.push(...this.blocks(body));
         }

@@ -636,6 +636,10 @@ export type QuestionCard = {
   loading: boolean;
   /** An approval card's question, worded for its tool ("Allow this edit?"); empty for a question. */
   approvalAsk?: string;
+  /** An approval card's title in plain words ("Claude Code wants to run a command"). */
+  approvalTitle?: string;
+  /** The muted line under it: the tool, and the folder it runs in when known. */
+  approvalDetail?: string;
 };
 
 export type QuestionDraft = { indices: number[]; other: string };

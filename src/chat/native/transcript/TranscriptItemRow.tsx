@@ -15,7 +15,7 @@ import { CompletedFilesFold } from './FileChanges';
 import { Glyph } from './icons';
 import { obj } from './json';
 import { MessageRow } from './MessageRow';
-import { SentAgentMessageCards } from './SystemRows';
+import { SentAgentMessageCards } from './AgentMessageCards';
 import { useDisclosure } from './state';
 import { PROSE_SIZE } from './theme';
 
@@ -130,16 +130,19 @@ function WorkSummary({ item, open, onToggle }: { item: CompletedWorkItem; open: 
     >
       {item.expandable ? <Glyph name={open ? 'chevron-down' : 'chevron-right'} size={14} color={theme.muted} /> : null}
       <Text style={[styles.summaryLabel, { color: item.expandable ? theme.foreground : theme.muted }]}>{item.label}</Text>
-      {stats.map((stat) => {
-        const failed = stat.kind === 'failed' || stat.kind === 'recovered';
-        const tone = failed ? theme.error : theme.cardMuted;
-        return (
-          <View key={stat.kind} style={[styles.chip, { borderColor: theme.ink(0.1) }]}>
-            <Glyph name={stat.kind === 'files' ? 'pencil' : failed ? 'alert-triangle' : 'tool'} size={12} color={tone} />
-            <Text style={[styles.chipText, { color: tone }]}>{stat.label}</Text>
-          </View>
-        );
-      })}
+      {/* The count pills sit at the row's right end and wrap among themselves (desktop `work_summary`). */}
+      <View style={styles.chips}>
+        {stats.map((stat) => {
+          const failed = stat.kind === 'failed' || stat.kind === 'recovered';
+          const tone = failed ? theme.error : theme.cardMuted;
+          return (
+            <View key={stat.kind} style={[styles.chip, { borderColor: theme.ink(0.1) }]}>
+              <Glyph name={stat.kind === 'files' ? 'pencil' : failed ? 'alert-triangle' : 'tool'} size={12} color={tone} />
+              <Text style={[styles.chipText, { color: tone }]}>{stat.label}</Text>
+            </View>
+          );
+        })}
+      </View>
     </Pressable>
   );
 }
@@ -169,7 +172,6 @@ const styles = StyleSheet.create({
   completedColumn: { gap: 10, minWidth: 0 },
   summary: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
     paddingLeft: 8,
@@ -179,13 +181,14 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   summaryLabel: { fontSize: 13.5, lineHeight: 18, fontWeight: '500' },
+  chips: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: 6 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 7,
+    borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
   },
   chipText: { fontSize: 11.5, lineHeight: 16 },

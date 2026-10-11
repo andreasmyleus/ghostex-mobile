@@ -11,6 +11,10 @@ const GLYPHS = {
   'chevron-right': ['M9 6l6 6l-6 6'],
   'chevron-down': ['M6 9l6 6l6-6'],
   'chevron-up': ['M6 15l6-6l6 6'],
+  'arrow-up-right': ['M17 7l-10 10', 'M8 7l9 0l0 9'],
+  'arrow-down-left': ['M17 7l-10 10', 'M16 17l-9 0l0 -9'],
+  'arrow-back-up': ['M9 14l-4 -4l4 -4', 'M5 10h11a4 4 0 1 1 0 8h-1'],
+  clock: ['M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0', 'M12 7v5l3 3'],
   pencil: ['M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4', 'M13.5 6.5l4 4'],
   'file-text': [
     'M14 3v4a1 1 0 0 0 1 1h4',

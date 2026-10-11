@@ -15,7 +15,9 @@ import type { RustChat } from '../../rust/useRustChat';
 import { Glyph } from './icons';
 import { arr, isTrue, obj, str } from './json';
 import { MONO_FONT, themedStyles, useTranscriptTheme } from '../transcript/theme';
-import { CARD_LINE_HEIGHT, CARD_TEXT_SIZE, CardButton, CardHeader, ChoiceRow, StatusCard, useCardText, useWellStyle } from './primitives';
+import { AskCard, AskHead, AskOption, PrimaryButton, ProgressDots } from './askCard';
+import { CARD_LINE_HEIGHT, CARD_TEXT_SIZE, CardButton, CardHeader, StatusCard, useCardText } from './primitives';
+import { ApprovalCard } from './ApprovalCard';
 import { useEchoedText } from './useEchoedText';
 
 /** Desktop returns the question card instead of the composer for a `question` prompt. */
@@ -60,7 +62,7 @@ function QuestionPromptCard({ chat, document }: { chat: RustChat; document: Chat
   const draft = card.drafts[index] ?? { indices: [], other: '' };
   const busy = card.busy;
   const multi = isTrue(question, 'multiSelect');
-  const title = str(question, 'header') || (count > 1 ? 'Questions' : 'Question');
+  const header = str(question, 'header');
   const promptKey = useMemo(() => JSON.stringify(prompt), [prompt]);
   const [collapsedKey, setCollapsedKey] = useState<string | null>(null);
   const collapsed = collapsedKey === promptKey;
@@ -69,184 +71,128 @@ function QuestionPromptCard({ chat, document }: { chat: RustChat; document: Chat
   const [other, setOther] = useEchoedText(`${promptKey}:${index}`, draft.other ?? '', reportText);
   const allowCustom = obj(question)?.allowCustom !== false;
 
-  const header = (
-    <CardHeader
+  // The header names the ask over the question's own header and its place (desktop question.rs, CDXC:SessionChat 2026-10-11).
+  const detail = collapsed
+    ? str(question, 'question')
+    : count > 1
+      ? header.length > 0
+        ? `${header} · ${index + 1} of ${count}`
+        : `${index + 1} of ${count}`
+      : header;
+  const head = (
+    <AskHead
       icon="help-circle"
-      title={title}
-      titleAddon={
-        collapsed ? (
-          <Text style={styles.collapsedQuestion} numberOfLines={1}>
-            {str(question, 'question')}
-          </Text>
-        ) : undefined
-      }
-      trailing={
-        count > 1 && !collapsed ? (
-          <Text style={styles.counter}>{`question ${index + 1} of ${count}`}</Text>
-        ) : undefined
-      }
+      tone="ask"
+      title="Needs your answer"
+      detail={detail}
+      trailing={count > 1 && !collapsed ? <ProgressDots index={index} count={count} /> : undefined}
       chevron={collapsed ? 'closed' : 'open'}
-      hasBody={!collapsed}
       accessibilityLabel={collapsed ? 'Show the question and its options' : 'Hide the question and its options'}
       onPress={() => setCollapsedKey(collapsed ? null : promptKey)}
     />
   );
 
-  const body = collapsed
-    ? []
-    : [
-        <Text key="question" style={cardText.prose}>
-          {str(question, 'question')}
-        </Text>,
-        multi ? (
-          <Text key="multi" style={cardText.hint}>
-            Select one or more options.
-          </Text>
-        ) : null,
-        <ScrollView key="options" style={{ maxHeight: height * 0.45 }} contentContainerStyle={styles.options} nestedScrollEnabled>
-          {arr(obj(question)?.options).map((option, optionIndex) => {
-            // A multi-select note is sent beside the picks, so they stay visible while it is typed.
-            const selected = (multi || draft.other.trim().length === 0) && draft.indices.includes(optionIndex);
-            const preview = str(option, 'preview');
-            return (
-              <View key={optionIndex} style={styles.optionWithPreview}>
-                <ChoiceRow
-                  label={str(option, 'label')}
-                  description={str(option, 'description')}
-                  selected={selected}
-                  disabled={busy}
-                  onPress={() => dispatch({ type: 'questionOption', index: optionIndex })}
-                />
-                {/* The mockup Claude shows beside the option, under the row that picks it (desktop question.rs). */}
-                {preview.length > 0 ? (
-                  <ScrollView style={styles.optionPreview} nestedScrollEnabled>
-                    <Text style={styles.commandText} selectable>
-                      {preview}
-                    </Text>
-                  </ScrollView>
-                ) : null}
-              </View>
-            );
-          })}
-        </ScrollView>,
-      ];
-
-  const actions = [
-    index > 0 ? (
-      <CardButton key="back" label="←" disabled={busy} onPress={() => dispatch({ type: 'questionBack' })} />
-    ) : null,
-    allowCustom ? (
-      <TextInput
-        key="answer"
-        accessibilityLabel="Your answer"
-        style={styles.answerInput}
-        value={other}
-        onChangeText={setOther}
-        editable={!busy}
-        multiline
-        submitBehavior="submit"
-        returnKeyType="send"
-        onSubmitEditing={() => dispatch({ type: 'questionNext' })}
-        placeholder="Write a custom answer…"
-        placeholderTextColor={P.placeholder}
-      />
-    ) : (
-      <View key="spacer" style={styles.spacer} />
-    ),
-    <CardButton key="cancel" label="Cancel" disabled={busy} onPress={() => dispatch({ type: 'questionCancel' })} />,
-    <CardButton
-      key="next"
-      label={card.controls.label}
-      wide
-      disabled={busy || card.controls.disabled}
-      onPress={() => dispatch({ type: 'questionNext' })}
-    />,
-  ];
-
-  return <StatusCard header={header} body={body} actions={actions} />;
-}
-
-function ApprovalCard({ chat, document }: { chat: RustChat; document: ChatDocument }) {
-  const cardText = useCardText();
-  const wellStyle = useWellStyle();
-  const styles = useStyles();
-  const P = useTranscriptTheme();
-  const { dispatch } = chat;
-  const prompt = document.prompt;
-  const busy = document.questionCard.busy;
-  const summary = str(prompt, 'summary');
-  const header = (
-    <View style={styles.approvalHeader}>
-      <View style={styles.approvalIcon}>
-        <Glyph name="shield-check" size={14} color={P.muted} />
-      </View>
-      <Text style={styles.approvalTitle}>Approval request</Text>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Dismiss"
-        hitSlop={8}
-        onPress={() => dispatch({ type: 'questionCancel' })}
-        style={({ pressed }) => [styles.dismiss, pressed && { backgroundColor: P.wellFill }]}
-      >
-        <Glyph name="x" size={14} color={P.muted} />
-      </Pressable>
-    </View>
+  const footer = (
+    <>
+      {index > 0 ? <CardButton label="←" disabled={busy} onPress={() => dispatch({ type: 'questionBack' })} /> : null}
+      {allowCustom ? (
+        <View style={styles.answerField}>
+          <Glyph name="pencil" size={13} color={P.muted} />
+          <TextInput
+            accessibilityLabel="Your answer"
+            style={styles.answerInput}
+            value={other}
+            onChangeText={setOther}
+            editable={!busy}
+            multiline
+            submitBehavior="submit"
+            returnKeyType="send"
+            onSubmitEditing={() => dispatch({ type: 'questionNext' })}
+            placeholder="Or write your own answer…"
+            placeholderTextColor={P.placeholder}
+          />
+        </View>
+      ) : (
+        <View style={styles.spacer} />
+      )}
+      <CardButton label="Cancel" disabled={busy} onPress={() => dispatch({ type: 'questionCancel' })} />
+      <PrimaryButton label={card.controls.label} disabled={busy || card.controls.disabled} onPress={() => dispatch({ type: 'questionNext' })} />
+    </>
   );
-  const body = [
-    <View key="ask" style={styles.approvalAsk}>
-      <Text style={[cardText.prose, styles.flexText]}>{document.questionCard.approvalAsk || 'Allow this command?'}</Text>
-      <Text style={cardText.hint}>{str(prompt, 'tool')}</Text>
-    </View>,
-    summary.length > 0 ? (
-      <View key="summary" style={wellStyle}>
-        <ScrollView style={styles.command} nestedScrollEnabled>
-          <Text style={styles.commandText} selectable>
-            {summary}
-          </Text>
-        </ScrollView>
-      </View>
-    ) : null,
-  ];
-  const actions = [
-    <CardButton
-      key="deny"
-      label="Deny"
-      disabled={busy}
-      onPress={() => dispatch({ type: 'answer', answer: { kind: 'approval', approvalSend: '' } })}
-    />,
-    <CardButton
-      key="allow"
-      label="Allow"
-      disabled={busy}
-      onPress={() => dispatch({ type: 'answer', answer: { kind: 'approval', approvalSend: '1' } })}
-    />,
-  ];
-  return <StatusCard header={header} body={body} actions={actions} />;
+
+  return (
+    <AskCard head={head} footer={footer}>
+      {collapsed ? null : (
+        <View style={styles.body}>
+          <Text style={styles.question}>{str(question, 'question')}</Text>
+          {multi ? <Text style={[cardText.hint, styles.multiHint]}>Select one or more options.</Text> : null}
+          <ScrollView style={{ maxHeight: height * 0.45 }} contentContainerStyle={styles.options} nestedScrollEnabled>
+            {arr(obj(question)?.options).map((option, optionIndex) => {
+              // A multi-select note is sent beside the picks, so they stay visible while it is typed.
+              const selected = (multi || draft.other.trim().length === 0) && draft.indices.includes(optionIndex);
+              const preview = str(option, 'preview');
+              return (
+                <View key={optionIndex} style={styles.optionWithPreview}>
+                  <AskOption
+                    label={str(option, 'label')}
+                    detail={str(option, 'description')}
+                    picked={selected}
+                    multiple={multi}
+                    enabled={!busy}
+                    onPress={() => dispatch({ type: 'questionOption', index: optionIndex })}
+                  />
+                  {/* The mockup Claude shows beside the option, under the row that picks it (desktop question.rs). */}
+                  {preview.length > 0 ? (
+                    <ScrollView style={styles.optionPreview} nestedScrollEnabled>
+                      <Text style={styles.commandText} selectable>
+                        {preview}
+                      </Text>
+                    </ScrollView>
+                  ) : null}
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+    </AskCard>
+  );
 }
 
 const useStyles = themedStyles((P) => ({
-  collapsedQuestion: {
-    flex: 1,
-    minWidth: 0,
-    color: P.muted,
-    fontSize: CARD_TEXT_SIZE,
-    lineHeight: CARD_LINE_HEIGHT,
+  body: {
+    gap: 12,
   },
-  counter: {
-    color: P.muted,
-    fontSize: 12,
-    lineHeight: CARD_LINE_HEIGHT,
+  question: {
+    color: P.foreground,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  multiHint: {
+    marginTop: -6,
   },
   options: {
-    gap: 6,
+    gap: 8,
+  },
+  answerField: {
+    flexGrow: 1,
+    flexBasis: 160,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: P.inputBorder,
+    backgroundColor: P.light ? P.background : P.input,
   },
   answerInput: {
-    flexGrow: 1,
-    flexBasis: 150,
+    flex: 1,
     minWidth: 0,
     maxHeight: 96,
     color: P.foreground,
-    fontSize: CARD_TEXT_SIZE,
+    fontSize: 13.5,
     lineHeight: 20,
     paddingVertical: 6,
     paddingHorizontal: 0,
@@ -254,53 +200,15 @@ const useStyles = themedStyles((P) => ({
   spacer: {
     flexGrow: 1,
   },
-  approvalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  approvalIcon: {
-    height: CARD_LINE_HEIGHT,
-    justifyContent: 'center',
-  },
-  approvalTitle: {
-    flex: 1,
-    color: P.foreground,
-    fontSize: CARD_TEXT_SIZE,
-    lineHeight: CARD_LINE_HEIGHT,
-    fontWeight: '500',
-  },
-  dismiss: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: P.light ? P.wellBorder : 'rgba(255,255,255,0.04)',
-    backgroundColor: P.light ? P.background : 'rgba(14,14,14,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  approvalAsk: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  flexText: {
-    flexShrink: 1,
-  },
-  command: {
-    maxHeight: 160,
-  },
   optionWithPreview: {
     gap: 6,
   },
   optionPreview: {
     maxHeight: 160,
-    marginLeft: 12,
+    marginLeft: 28,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 8,
     backgroundColor: P.wellFill,
   },
   commandText: {

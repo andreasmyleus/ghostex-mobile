@@ -31,9 +31,9 @@ export type ActionFields = {
   toggleAgentFleet: { open: boolean };
   toggleAgentTasks: { open: boolean };
   toggleAgentTasksCompleted: { expanded: boolean };
-  /** A coordinator's Threads panel fold and its Done group. Desktop: `coordinator_threads.rs`. */
+  /** A coordinator's Threads panel fold, and the step its list is at (0 in flight, 1 recent, 2+ 30 more each). Desktop: `coordinator_threads.rs`. */
   toggleCoordinatorThreads: { open: boolean };
-  toggleCoordinatorThreadsMore: { expanded: boolean };
+  toggleCoordinatorThreadsMore: { step: number };
   /** The grouped background-task row's fold. Desktop: `background_tasks.rs`. */
   toggleBackgroundTasks: { open: boolean };
   /** Open one of the coordinator's threads: gxserver resumes it if closed, then the host opens its tab. */
@@ -74,6 +74,8 @@ export type ActionFields = {
   openComposerReference: { href: string };
   /** A link in the transcript; `external` for http(s). */
   openMarkdownLink: { href: string; external?: boolean };
+  /** An agent message card's Go to session: the other session, focused. Desktop: `inter_agent_message.rs`. */
+  openAgentSession: { projectId: string; sessionId: string };
   /** Re-read the stash badge and note dot. The host sends it once the composer is ready. */
   refreshComposerChrome: { sessionId: string };
   /** Stash the draft into Saved Prompts. */
@@ -99,6 +101,8 @@ export type ActionFields = {
   insertSkill: { name: string; text: string; start: number; end: number };
   /** Read an image's bytes for a thumbnail or the viewer; answered as a `chatImage` request. */
   loadImage: { path: string };
+  /** A published page's picture for its card; answered as a `pageThumbnail` host action. */
+  loadPageThumbnail: { pageId: string };
 
   // ---- sending ------------------------------------------------------------------------------
   /** `interrupt`: interrupt and send, which stops the agent's running turn first (the core's `interrupts_turn`). */

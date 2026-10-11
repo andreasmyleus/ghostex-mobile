@@ -71,9 +71,11 @@ export default function ChatPage() {
           onPress={() => setSetting('markedHandoversStyle', row.value)}
         />
       ))}
+      {markedHandoversStyle !== 'plain' ? <SettingToggle settingKey='markedHandoversEmoji' label='Show marker emojis' /> : null}
       <Caption>
         How the chat colours the sections an agent marks with ❓ Needs you, ✅ Done, ⚠️ Read this and the other markers
-        (Marked handovers in the desktop app's Settings &gt; Chat).
+        (Marked handovers in the desktop app's Settings &gt; Chat). Show marker emojis puts the marker emoji in front of
+        each coloured section; while it is off the colour and the label show the kind.
       </Caption>
 
       {isGpuiAvailable() ? (

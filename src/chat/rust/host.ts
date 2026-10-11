@@ -57,6 +57,7 @@ import {
 import { readRecord, readRetainedSnapshot, writeRecord, writeRetainedSnapshot } from './storage';
 import { SessionChatStream, sessionChatRpc, type RpcAnswer } from './transport';
 import { markSessionOpen } from '../../terminal/openTiming';
+import { receivePageThumbnail } from '../native/transcript/pageThumbnails';
 
 /** Which chat a host serves. */
 export type RustChatTarget = { machine: MachineConnectionTarget; projectId: string; sessionId: string };
@@ -560,6 +561,10 @@ export class RustChatHost {
         return;
       case 'attachmentReferences':
         this.composer.insertAttachments(fields.paths);
+        return;
+      // A page card's picture; the card reads it from its own store (`pageThumbnails.ts`).
+      case 'pageThumbnail':
+        receivePageThumbnail(fields);
         return;
       case 'chatImage': {
         const path = typeof fields.path === 'string' ? fields.path : '';

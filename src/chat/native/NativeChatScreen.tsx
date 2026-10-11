@@ -313,6 +313,11 @@ function useChatViewRequests(
               void openForkBranch(machine, request.params).catch(() =>
                 show('The session could not be resumed. Try again from the sessions list.', true, 'Could not open that branch')
               );
+            } else if (request.action === 'openAgentSession') {
+              // An agent message card's Go to session: the other session, as its tab.
+              void openForkBranch(machine, request.params).catch(() =>
+                show('The session could not be opened. Try again from the sessions list.', true, 'Could not open that session')
+              );
             } else if (request.action === 'openCoordinatorThread') {
               // A coordinator's thread opens like a fork branch, as its tab. gxserver already resumed it when it was
               // closed (`openCoordinatorThread`), so the action carries no lifecycleState and nothing is woken here.

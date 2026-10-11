@@ -21,7 +21,7 @@ import { openTranscriptMenu } from '../transcriptMenuStore';
 import { highlightText, useOwnFind, useRowFind, type RowFind } from '../searchHighlight';
 import { inlineText, parseMarkdown, type Block, type FenceHeader, type Inline } from './parse';
 import { fitTableColumns } from './tableLayout';
-import { MarkedSection, useMarkedStyle } from './MarkedSections';
+import { MarkedSection, useMarkedEmoji, useMarkedStyle } from './MarkedSections';
 
 type Reference = { label: string; kind: string };
 
@@ -450,6 +450,7 @@ type BlockProps = { blocks: Block[]; context: InlineContext; color: string; dept
 function Blocks({ blocks, context, color, depth, listDepth }: BlockProps) {
   const { theme } = context;
   const markedStyle = useMarkedStyle();
+  const markedEmoji = useMarkedEmoji();
   return (
     <>
       {blocks.map((block, index) => {
@@ -512,6 +513,7 @@ function Blocks({ blocks, context, color, depth, listDepth }: BlockProps) {
                 <MarkedSection
                   meta={block.meta}
                   style={markedStyle}
+                  emoji={markedEmoji}
                   theme={theme}
                   color={color}
                   selectable={context.selectable}
@@ -524,6 +526,7 @@ function Blocks({ blocks, context, color, depth, listDepth }: BlockProps) {
                     ) : null
                   }
                   lead={renderInlines(block.lead, context, `${key}.lead`)}
+                  first={<Blocks blocks={block.first} context={context} color={color} depth={depth + 1} listDepth={listDepth} />}
                 />
               </View>
             );

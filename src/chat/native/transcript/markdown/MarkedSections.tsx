@@ -5,6 +5,9 @@
  *
  * CDXC:MarkedHandovers 2026-10-11 DECISION:
  * User picked three styles from the mockups (docs/2026-10-11/chat-section-markers/index.html in the Ghostex repo): A, a thin left rule in the kind's colour with the emoji kept; C, a coloured badge naming the kind in place of the emoji, dropping a bold label that only repeats it; D, the emoji kept and the label coloured, the default. The phone cannot read the computer's Marked handovers switch, so its own Settings > Chat entry picks the style and adds Plain text for no colouring. Supersedes the same day's summary strip at the top of the message (user: "let's actually just remove the summary at the top i don't think it's useful at all").
+ *
+ * CDXC:MarkedHandovers 2026-10-11 DECISION:
+ * User: "add a toggle for emojis in the colorful handover please. and set it to off by default. and if enabled add emojis to all 3." Show marker emojis (Settings > Chat > Marked sections, off by default): off, no style shows the marker emoji and the colour and label carry the kind (a section with no label of its own shows the kind's name as its coloured label); on, all three show it, the badge style before its badge.
  * SEE-ALSO: apps/desktop/src/app/native_chat/marked_look.rs in the Ghostex repo (the desktop look and the same palette).
  */
 
@@ -50,9 +53,15 @@ export function useMarkedStyle(): MarkedHandoversStyle {
   return useSettingsStore((store) => store.settings.markedHandoversStyle);
 }
 
+export function useMarkedEmoji(): boolean {
+  return useSettingsStore((store) => store.settings.markedHandoversEmoji);
+}
+
 type SectionProps = {
   meta: SectionMeta;
   style: MarkedHandoversStyle;
+  /** Show the marker emoji (Show marker emojis). */
+  emoji: boolean;
   theme: TranscriptTheme;
   color: string;
   /** Every line of the section drawn as written (style A, and Plain text). */
@@ -61,16 +70,25 @@ type SectionProps = {
   rest: ReactNode;
   /** The rest of the first line, as inline text (styles C and D). */
   lead: ReactNode;
+  /** The first line without its emoji, drawn as written (the thin rule with emojis off). */
+  first: ReactNode;
   selectable: boolean;
 };
 
-export function MarkedSection({ meta, style, theme, color, all, rest, lead, selectable }: SectionProps) {
+export function MarkedSection({ meta, style, emoji, theme, color, all, rest, lead, first, selectable }: SectionProps) {
   if (style === 'plain') return <View>{all}</View>;
   const accent = kindColor(meta.kind, theme.light);
   if (style === 'rule') {
     return (
       <View style={[styles.rule, { borderLeftColor: accent }]}>
-        {all}
+        {emoji ? (
+          all
+        ) : (
+          <>
+            {first}
+            {rest}
+          </>
+        )}
       </View>
     );
   }
@@ -81,6 +99,7 @@ export function MarkedSection({ meta, style, theme, color, all, rest, lead, sele
     return (
       <View>
         <View style={styles.badgeRow}>
+          {emoji ? <Text style={[styles.prose, { color }]}>{meta.emoji}</Text> : null}
           <View style={styles.badgeLine}>
             <View style={[styles.badge, { borderColor: withAlpha(accent, edge), backgroundColor: withAlpha(accent, fill + 0.05) }]}>
               <View style={[styles.badgeDot, { backgroundColor: accent }]} />
@@ -99,13 +118,15 @@ export function MarkedSection({ meta, style, theme, color, all, rest, lead, sele
       </View>
     );
   }
-  // Coloured labels: the line reads as written, with its label in the kind's colour.
+  // Coloured labels: the line reads as written, with its label in the kind's colour; without the
+  // emoji, a section with no label of its own shows the kind's name so the line keeps its colour.
+  const label = meta.label.length > 0 ? meta.label : emoji ? '' : `${meta.name}:`;
   return (
     <View>
       <Text selectable={selectable} style={[styles.prose, { color }]}>
-        {meta.emoji}{' '}
-        {meta.label.length > 0 ? <Text style={[styles.label, { color: accent }]}>{meta.label}</Text> : null}
-        {meta.label.length > 0 && hasLead ? ' ' : null}
+        {emoji ? `${meta.emoji} ` : null}
+        {label.length > 0 ? <Text style={[styles.label, { color: accent }]}>{label}</Text> : null}
+        {label.length > 0 && hasLead ? ' ' : null}
         {hasLead ? lead : null}
       </Text>
       {rest}

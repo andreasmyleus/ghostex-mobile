@@ -84,6 +84,8 @@ export type GhostexSettings = {
    */
   sessionChatGpuiTranscript: boolean;
   markedHandoversStyle: MarkedHandoversStyle;
+  /** Show the marker emoji in coloured marked sections (desktop `markedHandoversEmoji`, off by default). */
+  markedHandoversEmoji: boolean;
   // SSH connection (appended group).
   autoReconnect: boolean;
   keepAliveEnabled: boolean;
@@ -156,6 +158,7 @@ export function defaultSettings(): GhostexSettings {
     sessionChatFileEditPreviews: false,
     sessionChatGpuiTranscript: false,
     markedHandoversStyle: 'labels',
+    markedHandoversEmoji: false,
     autoReconnect: true,
     keepAliveEnabled: true,
     keepAliveIntervalSec: 30,
@@ -264,6 +267,7 @@ function sanitizeSettings(value: unknown): GhostexSettings {
       record.markedHandoversStyle === 'plain'
         ? record.markedHandoversStyle
         : defaults.markedHandoversStyle,
+    markedHandoversEmoji: bool('markedHandoversEmoji', defaults.markedHandoversEmoji),
     autoReconnect: bool('autoReconnect', defaults.autoReconnect),
     keepAliveEnabled: bool('keepAliveEnabled', defaults.keepAliveEnabled),
     keepAliveIntervalSec,

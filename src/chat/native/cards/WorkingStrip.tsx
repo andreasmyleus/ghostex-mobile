@@ -15,8 +15,9 @@ import { Animated, Easing, Pressable, Text, View } from 'react-native';
 import type { ChatDocument } from '../../rust/document';
 import { Glyph as ComposerGlyph } from '../composer/icons';
 import { Glyph, Spark } from './icons';
-import { isTrue, num, obj, str } from './json';
-import { themedStyles, useTranscriptTheme } from '../transcript/theme';
+import { arr, isTrue, num, obj, str } from './json';
+import type { JsonRecord } from './json';
+import { MONO_FONT, themedStyles, useTranscriptTheme } from '../transcript/theme';
 import { PulseDot, SWEEP_EASING, Spinner, StatusCard, useLoop } from './primitives';
 
 /** `packages/gx-chat-core/visual/working-strip.json`. */
@@ -150,6 +151,8 @@ function WorkingSpark() {
 function WorkingActivity({ activity }: { activity: Record<string, unknown> }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
+  const background = obj(activity.backgroundTasks);
+  if (background !== null) return <BackgroundTasks tasks={background} />;
   const percent = num(activity, 'percent');
   const indeterminate = isTrue(activity, 'indeterminate');
   const elapsed = str(activity, 'elapsedLabel');
@@ -185,6 +188,65 @@ function WorkingActivity({ activity }: { activity: Record<string, unknown> }) {
     <View accessibilityRole="progressbar" style={styles.fill}>
       <StatusCard header={header} body={body} />
     </View>
+  );
+}
+
+/**
+ * The background tasks the agent left running: a muted line, then one row per task with its own
+ * clock and "+N more" (`background_tasks.rs`; gx-chat-core words it). Pressing and holding a row
+ * shows its command, as hover does on the desktop.
+ */
+function BackgroundTasks({ tasks }: { tasks: JsonRecord }) {
+  const styles = useStyles();
+  const rows = arr(tasks.rows)
+    .map((row) => obj(row))
+    .filter((row): row is JsonRecord => row !== null);
+  const more = str(tasks, 'more');
+  const header = <Text style={styles.backgroundHeader}>{str(tasks, 'header')}</Text>;
+  const body = [
+    <View key="rows" style={styles.backgroundRows}>
+      {rows.map((row, index) => (
+        <BackgroundTaskRow key={str(row, 'id') || index} row={row} />
+      ))}
+      {more.length > 0 ? <Text style={[styles.backgroundHeader, styles.backgroundMore]}>{more}</Text> : null}
+    </View>,
+  ];
+  return (
+    <View accessibilityRole="progressbar" style={styles.fill}>
+      <StatusCard header={header} body={body} />
+    </View>
+  );
+}
+
+function BackgroundTaskRow({ row }: { row: JsonRecord }) {
+  const styles = useStyles();
+  const P = useTranscriptTheme();
+  const [revealed, setRevealed] = useState(false);
+  const prefix = str(row, 'prefix');
+  const title = str(row, 'title');
+  const command = str(row, 'command');
+  const elapsed = str(row, 'elapsed');
+  return (
+    <Pressable
+      accessibilityRole="text"
+      accessibilityLabel={[prefix, title, elapsed].filter((part) => part.length > 0).join(' ')}
+      accessibilityHint={command.length > 0 ? 'Press and hold to see the command' : undefined}
+      disabled={command.length === 0}
+      onLongPress={() => setRevealed(true)}
+      onPressOut={() => setRevealed(false)}
+    >
+      <View style={styles.backgroundRow}>
+        <View style={styles.backgroundSpinner}>
+          <Spinner size={12} color={P.controlPrimary} />
+        </View>
+        <Text style={styles.backgroundTitle} numberOfLines={1} ellipsizeMode="tail">
+          {prefix.length > 0 ? `${prefix} ` : ''}
+          <Text style={styles.backgroundTitleStrong}>{title}</Text>
+        </Text>
+        {elapsed.length > 0 ? <Text style={styles.activityClock}>{elapsed}</Text> : null}
+      </View>
+      {revealed ? <Text style={styles.backgroundCommand}>{command}</Text> : null}
+    </Pressable>
   );
 }
 
@@ -292,6 +354,46 @@ const useStyles = themedStyles((P) => ({
     fontSize: 14,
     fontWeight: '500',
     fontVariant: ['tabular-nums'],
+  },
+  backgroundHeader: {
+    color: P.muted,
+    fontSize: 13,
+    lineHeight: 19.5,
+  },
+  backgroundRows: {
+    gap: 6,
+  },
+  backgroundMore: {
+    paddingLeft: 22,
+  },
+  backgroundRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backgroundSpinner: {
+    width: 12,
+    height: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backgroundTitle: {
+    flex: 1,
+    minWidth: 0,
+    color: P.foreground,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  backgroundTitleStrong: {
+    fontWeight: '600',
+  },
+  backgroundCommand: {
+    marginTop: 2,
+    marginLeft: 22,
+    color: P.muted,
+    fontFamily: MONO_FONT,
+    fontSize: 11.5,
+    lineHeight: 16,
   },
   track: {
     height: 4,

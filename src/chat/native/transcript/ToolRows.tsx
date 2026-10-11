@@ -11,13 +11,17 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { ProjectedMessage } from '../../rust/document';
 import { subagentOpenAction } from '../cards';
 import { useNativeChatUi, useRowDetail, useTranscriptEnv } from './context';
-import { Chevron, DisclosureBody, DisclosureHeading, useFoldPlace } from './Disclosure';
+import { DisclosureBody, DisclosureHeading, useFoldPlace } from './Disclosure';
 import { Glyph, toolGlyph } from './icons';
 import { arr, obj, str, type JsonRecord } from './json';
 import { useDisclosure } from './state';
 import { CODE_LINE, CODE_SIZE, MONO_FONT, PROSE_LINE, PROSE_SIZE } from './theme';
 
-const ROW_GAP = 8;
+/** Each row carries its own padding (the 2026-10-11 work look), so the gap between rows is small. */
+const ROW_GAP = 2;
+/** A row's padding beside its glyph tile, and the tile's side (desktop `tool_run.rs`). */
+const ROW_PAD_X = 8;
+const TILE = 22;
 
 /**
  * The tool rows of one message, folded the way the core's `toolFold` says, or in Simple mode
@@ -70,7 +74,10 @@ export function ToolRows({ message }: { message: ProjectedMessage }) {
       accessibilityState={{ expanded: runOpen }}
       style={({ pressed }) => [styles.foldToggle, pressed && { backgroundColor: theme.pressed }]}
     >
-      <Chevron open={runOpen} color={theme.muted} />
+      {/* The chevron sits in a slot as wide as the rows' glyph tiles, so the label starts where their names do. */}
+      <View style={styles.foldSlot}>
+        <Glyph name={runOpen ? 'chevron-down' : 'chevron-right'} size={14} color={theme.muted} />
+      </View>
       <Text style={[styles.foldLabel, { color: theme.muted }]}>{label}</Text>
     </Pressable>
   );
@@ -187,34 +194,48 @@ const ToolRow = memo(function ToolRow({
   const detail = obj(useRowDetail(key, 'tool', messageId, index, expanded));
   const failed = tool.failed === true;
   const name = str(tool, 'name');
-  // Simple mode hides the command preview next to the tool's name.
-  const preview = simple ? '' : str(tool, 'preview');
+  const failure = str(tool, 'failure');
+  const duration = str(tool, 'duration');
+  const status = str(tool, 'status');
+  // Simple mode hides the command preview next to the tool's name; a failed call says what failed after it.
+  const argument = simple ? '' : str(tool, 'preview');
+  const preview = failure.length === 0 ? argument : argument.length === 0 ? failure : `${argument} \u00b7 ${failure}`;
   const subagent = str(tool.subagent, 'name');
   const openSubagent = subagentOpenAction(tool.subagent);
+  const heading = failed ? theme.error : theme.foreground;
   const trigger = (
     <Pressable
       disabled={!hasDetail}
       onPress={toggle}
       accessibilityRole='button'
-      accessibilityLabel={subagent.length > 0 ? `Tool ${name} (${subagent})` : preview.length > 0 ? `Tool ${name}: ${preview}` : `Tool ${name}`}
+      accessibilityLabel={subagent.length > 0 ? `Tool ${name} (${subagent})` : argument.length > 0 ? `Tool ${name}: ${argument}` : `Tool ${name}`}
       accessibilityState={{ expanded }}
-      style={({ pressed }) => [styles.trigger, subagent.length === 0 && styles.triggerFill, pressed && { backgroundColor: theme.pressed }]}
+      style={({ pressed }) => [
+        styles.trigger,
+        subagent.length === 0 && styles.triggerFill,
+        failed && { backgroundColor: errorWash(theme.error) },
+        pressed && { backgroundColor: theme.pressed },
+      ]}
     >
-      <View style={styles.glyphSlot}>
-        <Glyph name={toolGlyph(str(tool, 'glyph'))} size={14} color={theme.muted} />
+      <View style={[styles.tile, { backgroundColor: theme.ink(0.05) }]}>
+        <Glyph name={toolGlyph(str(tool, 'glyph'))} size={13} color={theme.muted} />
       </View>
       {preview.length > 0 && subagent.length === 0 ? (
         // One line with two runs (desktop `name_and_preview`): side by side, the mono preview sat
         // below the name's baseline; nested runs share one.
-        <Text numberOfLines={1} style={styles.nameLine}>
-          <Text style={[styles.name, { color: failed ? theme.error : theme.primary }]}>{name}</Text>
+        <Text numberOfLines={1} style={[styles.nameLine, styles.fill]}>
+          <Text style={[styles.name, { color: heading }]}>{name}</Text>
           {' '}
           <Text style={[styles.preview, { color: theme.muted }]}>{preview}</Text>
         </Text>
       ) : (
-        <Text style={[styles.name, { color: failed ? theme.error : theme.primary }]}>{name}</Text>
+        <Text numberOfLines={1} style={[styles.name, subagent.length === 0 && styles.fill, { color: heading }]}>
+          {name}
+        </Text>
       )}
-      {hasDetail ? <Glyph name={expanded ? 'chevron-down' : 'chevron-right'} size={12} color={theme.muted} /> : null}
+      {duration.length > 0 ? <Text style={[styles.duration, { color: theme.mutedInk(0.75) }]}>{duration}</Text> : null}
+      {status === 'done' ? <Glyph name='check' size={13} color={successTone(theme.light)} /> : null}
+      {status === 'failed' ? <Glyph name='x' size={13} color={theme.error} /> : null}
     </Pressable>
   );
   let body = null;
@@ -236,10 +257,14 @@ const ToolRow = memo(function ToolRow({
       );
     }
     if (parts.length > 0) {
+      // The rail hangs from the middle of the glyph tile, which the row's padding moved right of the
+      // marker column the rail is measured from.
       body = (
-        <DisclosureBody onCollapse={toggle} label={`Collapse ${name}`} rail='tool'>
-          {parts}
-        </DisclosureBody>
+        <View style={styles.detailInset}>
+          <DisclosureBody onCollapse={toggle} label={`Collapse ${name}`} rail='tool'>
+            {parts}
+          </DisclosureBody>
+        </View>
       );
     }
   }
@@ -272,6 +297,16 @@ const ToolRow = memo(function ToolRow({
     </View>
   );
 });
+
+/** A finished call's check (desktop `ChatAppearance::success`). */
+function successTone(light: boolean): string {
+  return light ? '#059669' : '#34d399';
+}
+
+/** A failed row's tint: the error tone at 6%. */
+function errorWash(error: string): string {
+  return `${error}0f`;
+}
 
 /**
  * One labelled block of a tool's detail: verbatim monospaced text in a height-capped box, selectable
@@ -327,17 +362,31 @@ const styles = StyleSheet.create({
   shellSpacer: { flexGrow: 1 },
   shellStatus: { fontSize: 12.25, flexShrink: 0 },
   row: { gap: 4, minWidth: 0 },
-  trigger: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 4, minWidth: 0, flexShrink: 1 },
+  trigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: ROW_PAD_X,
+    paddingVertical: 5,
+    borderRadius: 8,
+    minWidth: 0,
+    flexShrink: 1,
+  },
   triggerFill: { alignSelf: 'stretch' },
   glyphSlot: { width: 16, marginLeft: 2, height: PROSE_LINE, alignItems: 'center', justifyContent: 'center' },
-  name: { fontSize: PROSE_SIZE, lineHeight: PROSE_LINE, flexShrink: 0 },
-  preview: { fontFamily: MONO_FONT, fontSize: CODE_SIZE, flexShrink: 1, minWidth: 0 },
-  nameLine: { fontSize: PROSE_SIZE, lineHeight: PROSE_LINE, flexShrink: 1, minWidth: 0 },
+  tile: { width: TILE, height: TILE, borderRadius: 6, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  fill: { flex: 1 },
+  name: { fontSize: 13.5, lineHeight: 20, fontWeight: '500', flexShrink: 0 },
+  preview: { fontFamily: MONO_FONT, fontSize: 12.3, fontWeight: '400', flexShrink: 1, minWidth: 0 },
+  nameLine: { fontSize: 13.5, lineHeight: 20, flexShrink: 1, minWidth: 0 },
+  duration: { fontSize: 11.5, flexShrink: 0, fontVariant: ['tabular-nums'] },
+  detailInset: { paddingLeft: ROW_PAD_X + TILE / 2 - 10 },
   subagentLine: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 0 },
   subagentLink: { flexShrink: 1, minWidth: 0 },
   subagentText: { fontSize: PROSE_SIZE, lineHeight: PROSE_LINE },
-  foldToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 4 },
-  foldLabel: { fontSize: PROSE_SIZE, lineHeight: PROSE_LINE },
+  foldToggle: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: ROW_PAD_X, paddingVertical: 2, borderRadius: 8 },
+  foldSlot: { width: TILE, height: PROSE_LINE, alignItems: 'center', justifyContent: 'center' },
+  foldLabel: { fontSize: 13.5, lineHeight: PROSE_LINE },
   bodyGroup: { gap: 4, minWidth: 0 },
   bodyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, minWidth: 0 },
   bodyLabel: { fontSize: 12.25, flexShrink: 1 },

@@ -1,6 +1,6 @@
 /**
  * One transcript item (desktop `transcript.rs` `transcript_item_row`): a message, a summary-mode
- * turn, or a finished turn folded behind "Worked for Xs" (`completed_work_row.rs`,
+ * turn, or a finished turn folded behind its "Worked 2m 5s" summary (`completed_work_row.rs`,
  * `deferred_work.rs`). A kind this build does not know draws nothing.
  */
 
@@ -12,11 +12,12 @@ import { QuestionExchangeCards } from '../cards';
 import { useNativeChatUi, useTranscriptEnv, useTranscriptFlags } from './context';
 import { DisclosureBody, DisclosureHeading, FoldPlaceProvider } from './Disclosure';
 import { CompletedFilesFold } from './FileChanges';
+import { Glyph } from './icons';
 import { obj } from './json';
 import { MessageRow } from './MessageRow';
 import { SentAgentMessageCards } from './SystemRows';
 import { useDisclosure } from './state';
-import { PROSE_COLUMN, PROSE_LINE, PROSE_SIZE } from './theme';
+import { PROSE_SIZE } from './theme';
 
 const IN_WORK_FOLD = { inWorkFold: true, hideFileChanges: true };
 const HIDE_FILES = { inWorkFold: false, hideFileChanges: true };
@@ -61,7 +62,7 @@ function SummaryRow({ item }: { item: SummaryItem }) {
 }
 
 function CompletedWorkRow({ item }: { item: CompletedWorkItem }) {
-  const { theme, verbose, simple, dispatch } = useTranscriptEnv();
+  const { verbose, simple, dispatch } = useTranscriptEnv();
   const { disclosures } = useNativeChatUi();
   const flags = useTranscriptFlags();
   const key = `work:${item.id}`;
@@ -74,16 +75,11 @@ function CompletedWorkRow({ item }: { item: CompletedWorkItem }) {
   };
   const deferredState = flags.deferredWork[item.id];
   return (
-    <View style={styles.column}>
-      {item.expandable ? (
-        <DisclosureHeading label={item.label} open={open} onToggle={toggle} color={theme.muted} medium />
-      ) : (
-        <Text style={[styles.plainHeading, { color: theme.muted }]}>{item.label}</Text>
-      )}
-      <View style={[styles.divider, { backgroundColor: theme.border }]} />
+    <View style={styles.completedColumn}>
+      <WorkSummary item={item} open={open} onToggle={toggle} />
       {open ? (
         <FoldPlaceProvider value={IN_WORK_FOLD}>
-          <DisclosureBody onCollapse={toggle} label='Collapse completed work'>
+          <DisclosureBody onCollapse={toggle} label='Collapse completed work' rail='work'>
             {deferredState !== undefined ? <DeferredNotice item={item} error={deferredState.error ?? ''} /> : null}
             {item.work.map((message) => (
               <MessageRow key={message.id} message={message} />
@@ -94,6 +90,7 @@ function CompletedWorkRow({ item }: { item: CompletedWorkItem }) {
       <CompletedFilesFold
         itemId={item.id}
         files={item.files}
+        card={item.filesCard}
         label={simple ? item.simpleFilesLabel : item.filesLabel}
         deferred={item.deferred}
         notice={deferredState !== undefined ? <DeferredNotice item={item} error={deferredState.error ?? ''} /> : null}
@@ -107,6 +104,43 @@ function CompletedWorkRow({ item }: { item: CompletedWorkItem }) {
         {item.final !== undefined && item.final !== null ? <MessageRow message={item.final} /> : null}
       </FoldPlaceProvider>
     </View>
+  );
+}
+
+/**
+ * The bar a finished turn folds behind (desktop `work_summary` in `completed_work_row.rs`): a
+ * chevron, "Worked 2m 5s", and the turn's counts as chips (gx-chat-core `work_summary.rs`), so the
+ * closed fold still says what happened.
+ */
+function WorkSummary({ item, open, onToggle }: { item: CompletedWorkItem; open: boolean; onToggle(): void }) {
+  const { theme } = useTranscriptEnv();
+  const stats = item.stats ?? [];
+  const spoken = [item.label, ...stats.map((stat) => stat.label)].join(', ');
+  return (
+    <Pressable
+      disabled={!item.expandable}
+      onPress={onToggle}
+      accessibilityRole='button'
+      accessibilityLabel={spoken}
+      accessibilityState={{ expanded: open }}
+      style={({ pressed }) => [
+        styles.summary,
+        { borderColor: theme.ink(0.06), backgroundColor: pressed ? theme.input : theme.ink(0.025) },
+      ]}
+    >
+      {item.expandable ? <Glyph name={open ? 'chevron-down' : 'chevron-right'} size={14} color={theme.muted} /> : null}
+      <Text style={[styles.summaryLabel, { color: item.expandable ? theme.foreground : theme.muted }]}>{item.label}</Text>
+      {stats.map((stat) => {
+        const failed = stat.kind === 'failed' || stat.kind === 'recovered';
+        const tone = failed ? theme.error : theme.cardMuted;
+        return (
+          <View key={stat.kind} style={[styles.chip, { borderColor: theme.ink(0.1) }]}>
+            <Glyph name={stat.kind === 'files' ? 'pencil' : failed ? 'alert-triangle' : 'tool'} size={12} color={tone} />
+            <Text style={[styles.chipText, { color: tone }]}>{stat.label}</Text>
+          </View>
+        );
+      })}
+    </Pressable>
   );
 }
 
@@ -132,8 +166,29 @@ function DeferredNotice({ item, error }: { item: CompletedWorkItem; error: strin
 
 const styles = StyleSheet.create({
   column: { gap: 8, minWidth: 0 },
-  plainHeading: { paddingLeft: PROSE_COLUMN, opacity: 0.5, fontWeight: '500', fontSize: PROSE_SIZE, lineHeight: PROSE_LINE },
-  divider: { height: 1, marginTop: 2, marginBottom: 8 },
+  completedColumn: { gap: 10, minWidth: 0 },
+  summary: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    paddingLeft: 8,
+    paddingRight: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  summaryLabel: { fontSize: 13.5, lineHeight: 18, fontWeight: '500' },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 7,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  chipText: { fontSize: 11.5, lineHeight: 16 },
   deferred: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8 },
   deferredText: { fontSize: PROSE_SIZE, flexShrink: 1 },
   retry: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },

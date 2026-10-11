@@ -156,15 +156,27 @@ export type SummaryItem = {
   latestReply?: boolean;
 };
 
-/** A finished turn in verbose mode: "Worked for Xs" plus its file changes in one fold.
- * Desktop: `completed_work_row.rs`, `deferred_work.rs`. */
+/** One count beside a finished turn's "Worked 2m 5s" (gx-chat-core `work_summary.rs`). */
+export type WorkStat = {
+  /** Picks the chip's glyph and tone. */
+  kind: 'tools' | 'files' | 'failed' | 'recovered';
+  /** "4 tool calls", "1 file", "1 failed, then passed". */
+  label: string;
+};
+
+/** A finished turn in verbose mode: "Worked 2m 5s" with its counts, plus its file changes in one
+ * fold. Desktop: `completed_work_row.rs`, `deferred_work.rs`. */
 export type CompletedWorkItem = {
   kind: 'completed-work';
   id: string;
-  /** "Worked for Xs". */
+  /** "Worked 2m 5s". */
   label: string;
+  /** The counts the summary bar shows beside the label; omitted when there are none. */
+  stats?: WorkStat[];
   /** File change rows of the whole turn (same row shape as {@link ProjectedMessage.files}). */
   files: Json[];
+  /** The file change card's header over `files` (`file_change_card` in the core). */
+  filesCard?: Json;
   /** "N files changed" in verbose mode. */
   filesLabel: string;
   /** The same count in simple mode wording. */
@@ -256,11 +268,16 @@ export type ProjectedMessage = {
   systemCard?: Json;
   /** File change rows. Desktop: `file_change_card.rs`, `file_change_rows` in the core. */
   files?: Json[];
+  /** The file change card's header over `files` (`file_change_card` in the core). */
+  fileCard?: Json;
   /** "Edited N files" in simple mode. */
   simpleFileLabel?: string;
   /** "N tool calls" in simple mode. */
   simpleToolLabel?: string;
-  /** Tool call rows. Desktop: `tool_run.rs`, `terminal_tool_row.rs`. */
+  /** Tool call rows: `{name, glyph, preview, failed, status: 'done' | 'failed' | 'running',
+   * failure, duration, hasCall, hasDetail, exchange, sentMessage, subagent}`; `failure` is what a
+   * failed call reported and `duration` how long it ran ("14.3s"), each empty when unknown.
+   * Desktop: `tool_run.rs`, `terminal_tool_row.rs`. */
   tools?: Json[];
   /** How the tool rows fold. Desktop: `tool_run.rs`. */
   toolFold?: Json;

@@ -89,18 +89,30 @@ export function DisclosureBody({
   onCollapse(): void;
   label: string;
   gap?: number;
-  rail?: 'marker' | 'tool';
+  /** `work` is a finished turn's log under its "Worked" summary: a hairline, rows hung further off it. */
+  rail?: 'marker' | 'tool' | 'work';
   children: ReactNode;
 }) {
   const { theme } = useTranscriptEnv();
   // The line is centred under the chevron or glyph that opens the body, at every depth
   // (`SLOT_CENTRE` in desktop's `disclosure_body.rs`); the content keeps its own column.
-  const contentX = rail === 'marker' ? 17 : 29.5;
+  const contentX = rail === 'marker' ? 17 : rail === 'work' ? 23 : 29.5;
+  const hairline = rail === 'work';
   return (
     <View style={[styles.body, { marginLeft: SLOT_CENTRE - RAIL_BOX / 2, gap: contentX - SLOT_CENTRE - RAIL_BOX / 2 }]}>
       <Pressable onPress={onCollapse} accessibilityRole='button' accessibilityLabel={label} style={styles.railBox}>
         {({ pressed }) => (
-          <View style={[styles.rail, { backgroundColor: pressed ? theme.foreground : theme.muted, opacity: pressed ? 1 : 0.42 }]} />
+          <View
+            style={[
+              styles.rail,
+              hairline && styles.hairline,
+              pressed
+                ? { backgroundColor: theme.foreground, opacity: 1 }
+                : hairline
+                  ? { backgroundColor: theme.ink(0.1) }
+                  : { backgroundColor: theme.muted, opacity: 0.42 },
+            ]}
+          />
         )}
       </Pressable>
       <View style={[styles.bodyColumn, { gap }]}>{children}</View>
@@ -128,5 +140,6 @@ const styles = StyleSheet.create({
   body: { flexDirection: 'row', minWidth: 0 },
   railBox: { width: RAIL_BOX, alignItems: 'center', flexShrink: 0 },
   rail: { width: 2, flex: 1, borderRadius: 1 },
+  hairline: { width: 1, borderRadius: 0.5 },
   bodyColumn: { flex: 1, minWidth: 0 },
 });

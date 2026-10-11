@@ -209,7 +209,7 @@ function MessageFiles({ message }: { message: ProjectedMessage }) {
   const { simple } = useTranscriptEnv();
   const { disclosures } = useNativeChatUi();
   const [open, toggle] = useDisclosure(disclosures, `files:${message.id}`);
-  const stack = <FileChangeStack stackId={message.id} files={message.files} />;
+  const stack = <FileChangeStack stackId={message.id} files={message.files} card={message.fileCard} />;
   if (!simple) return stack;
   return (
     <View style={styles.message}>

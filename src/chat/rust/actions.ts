@@ -99,7 +99,8 @@ export type ActionFields = {
   loadImage: { path: string };
 
   // ---- sending ------------------------------------------------------------------------------
-  send: { text: string; draftVersion: DraftVersion; imagePaths?: string[] };
+  /** `interrupt`: interrupt and send, which stops the agent's running turn first (the core's `interrupts_turn`). */
+  send: { text: string; draftVersion: DraftVersion; imagePaths?: string[]; interrupt?: boolean };
   queue: { text: string; draftVersion: DraftVersion };
   compact: { text: string; draftVersion: DraftVersion };
   /** A terminal key: `enter`, `shift-tab`, `shift-up`, `shift-down`. */

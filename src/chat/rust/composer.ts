@@ -16,6 +16,9 @@ import type { ChatDocument } from './document';
 import { nextDraftVersion, randomUuid } from './host-records';
 import type { UserAction } from './actions';
 
+/** What a submission does; `interrupt` is Interrupt & Send. */
+export type SubmitMode = 'send' | 'queue' | 'compact' | 'handoff' | 'interrupt';
+
 export type ComposerModelState = {
   /** The field's text. */
   text: string;
@@ -115,10 +118,13 @@ export class ComposerModel {
   }
 
   /**
-   * Send, Queue, Compact or Handoff, with desktop's gates (`native_chat/composer.rs`, `submit`).
+   * Send, Queue, Compact, Handoff, or Interrupt & Send (a send that stops the agent's running turn
+   * first), with desktop's gates (`native_chat/composer.rs`, `submit`).
    * Returns whether the text left the composer.
    */
-  submit(mode: 'send' | 'queue' | 'compact' | 'handoff'): boolean {
+  submit(requested: SubmitMode): boolean {
+    const interrupt = requested === 'interrupt';
+    const mode = interrupt ? 'send' : requested;
     const document = this.hooks.document();
     if (!this.state.ready || this.state.text.trim().length === 0) return false;
     if (mode !== 'send' && mode !== 'handoff' && document?.queue.capabilities.canQueue !== true) return false;
@@ -131,7 +137,7 @@ export class ComposerModel {
       this.hooks.dispatch({ type: 'completeComposerCommand' });
       return false;
     }
-    const submission = { type: mode, text: this.state.text, draftVersion: this.version() } as UserAction;
+    const submission = { type: mode, text: this.state.text, draftVersion: this.version(), ...(interrupt ? { interrupt } : {}) } as UserAction;
     this.set({
       pendingSend: true,
       text: '',

@@ -31,7 +31,7 @@ import type { MachineConnectionTarget } from '../../machines/credentials';
 import { uploadSessionChatLocalFile } from '../session-chat-helpers';
 import type { UserAction } from './actions';
 import { readComposerBoot } from './boot';
-import { ComposerModel, type ComposerModelState } from './composer';
+import { ComposerModel, type ComposerModelState, type SubmitMode } from './composer';
 import {
   applyItemsSplice,
   type ChatDocument,
@@ -333,7 +333,7 @@ export class RustChatHost {
     selected: (selection: { start: number; end: number }) => this.composer.selected(selection),
     focused: () => this.composer.focused(),
     blurred: () => this.composer.blurred(),
-    submit: (mode: 'send' | 'queue' | 'compact' | 'handoff') => this.composer.submit(mode),
+    submit: (mode: SubmitMode) => this.composer.submit(mode),
     /** Replaces the whole draft (a picked saved prompt), desktop's `insert_prompt`. */
     replace: (text: string) => this.composer.replace(text, null, false),
   };

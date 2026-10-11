@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettingsStore } from '../../../settings/store';
 import type { UserAction } from '../../rust/actions';
 import type { ChatDocument } from '../../rust/document';
+import type { SubmitMode } from '../../rust/composer';
 import type { RustChat } from '../../rust/useRustChat';
 import { AttachmentPreviews } from './AttachmentPreviews';
 import { pickAttachments, type AttachSource } from './attachments';
@@ -259,7 +260,7 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
           return false;
         }
         case 'submit':
-          input?.submit((str(command, 'mode') || 'send') as 'send' | 'queue' | 'compact' | 'handoff');
+          input?.submit((str(command, 'mode') || 'send') as SubmitMode);
           return false;
         case 'composerHost':
           // Attach swaps this sheet's rows for the Attach rows; closing it would close those too.
@@ -365,7 +366,9 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
       model !== null && model.text.trim().length > 0
         ? { disabled: !(model.ready && document.queue.capabilities.canQueue) }
         : null;
-    setMenu({ kind: 'rows', rows: moreActionsRows({ document, simple: simpleSetting, verbose, available, serves, compactAndSend, draft: model?.text ?? '' }) });
+    const interruptAndSend =
+      model !== null && model.text.trim().length > 0 && document.working === true ? { disabled: !model.ready } : null;
+    setMenu({ kind: 'rows', rows: moreActionsRows({ document, simple: simpleSetting, verbose, available, serves, compactAndSend, interruptAndSend, draft: model?.text ?? '' }) });
   }, [available, document, model, serves, simpleSetting, verboseSetting]);
 
   /**

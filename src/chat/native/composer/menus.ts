@@ -53,6 +53,11 @@ export type MoreActionsInput = {
    * already queues, so it leads this menu instead.
    */
   compactAndSend?: { disabled: boolean } | null;
+  /**
+   * Interrupt & Send, while there is a draft and the agent is working: it stops the running turn
+   * and sends the draft now. Desktop has it on Ctrl+Enter and in Send's right-click menu.
+   */
+  interruptAndSend?: { disabled: boolean } | null;
   /** The chat box's text, which Side chat toggles its `/btw ` prefix on. */
   draft?: string;
 };
@@ -117,12 +122,15 @@ function skillsRow(document: ChatDocument): MenuRow {
   return { label: 'Skills', iconPath: 'titlebar/sparkles.svg', children: skills };
 }
 
-export function moreActionsRows({ document, simple, verbose, available, serves, compactAndSend = null, draft = '' }: MoreActionsInput): MenuRow[] {
+export function moreActionsRows({ document, simple, verbose, available, serves, compactAndSend = null, interruptAndSend = null, draft = '' }: MoreActionsInput): MenuRow[] {
   const rows: MenuRow[] = [];
+  if (interruptAndSend !== null) {
+    rows.push({ label: 'Interrupt & Send', iconPath: 'titlebar/arrow-up.svg', disabled: interruptAndSend.disabled, command: { type: 'submit', mode: 'interrupt' } });
+  }
   if (compactAndSend !== null) {
     rows.push({ label: 'Compact & Send', iconPath: 'titlebar/arrow-up.svg', disabled: compactAndSend.disabled, command: { type: 'submit', mode: 'compact' } });
-    rows.push({ separator: true });
   }
+  if (interruptAndSend !== null || compactAndSend !== null) rows.push({ separator: true });
   const labels = obj(document.optionLabels);
   const merged = obj(document.modelMenu) !== null;
   if (document.composerOverflow?.optionsOverflowed === true) {

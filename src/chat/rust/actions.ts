@@ -148,6 +148,7 @@ export type ActionFields = {
   formChoice: { form: string; question: number; choice: number };
   formText: { form: string; question: number; text: string };
   formSend: { form: string };
+  formToggle: { form: string };
   asyncQuestionToggle: {};
   asyncQuestionNavigate: { direction: string };
   asyncQuestionText: { key: string; text: string };

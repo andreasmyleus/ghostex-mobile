@@ -22,7 +22,7 @@ import type { SectionMeta } from './parse';
 const IN_PROGRESS = { dark: '#00a6ed', light: '#0077b6' };
 
 const PALETTE: { [kind: string]: { dark: string; light: string } } = {
-  need: { dark: '#60a5fa', light: '#2563eb' },
+  need: { dark: '#fb923c', light: '#c2410c' },
   done: { dark: '#4ade80', light: '#15803d' },
   read: { dark: '#fbbf24', light: '#b45309' },
   kicked: { dark: '#f472b6', light: '#be185d' },

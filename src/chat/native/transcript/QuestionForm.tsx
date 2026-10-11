@@ -57,6 +57,42 @@ export function QuestionForm({ id, source }: { id: string; source: string }) {
             : questions.length === 1
               ? '1 question'
               : `${questions.length} questions`;
+  const drafts = arr(form.drafts);
+  const body = questions.map((question, index) => (
+    <View key={index} style={index > 0 ? [styles.later, { borderTopColor: theme.ink(0.06) }] : undefined}>
+      <FormQuestion
+        formId={id}
+        index={index}
+        question={obj(question)}
+        draft={obj(drafts[index])}
+        otherLabel={str(form, 'otherLabel')}
+        enabled={enabled}
+        answered={phase === 'answered'}
+      />
+    </View>
+  ));
+  // An answered form is one line that opens the read-only form and closes it again; the core says
+  // which (`collapsed`, the SessionChat 2026-10-12 DECISION in packages/gx-chat-core/src/questions/forms.rs).
+  if (phase === 'answered' && error.length === 0) {
+    const open = form.collapsed !== true;
+    return (
+      <AskCard
+        head={
+          <AskHead
+            icon="check"
+            tone="answered"
+            title={str(form, 'title') || 'Questions'}
+            trailing={<Text style={[styles.answered, { color: theme.muted }]}>Answered</Text>}
+            chevron={open ? 'open' : 'closed'}
+            accessibilityLabel={open ? 'Hide the questions' : 'Show the questions'}
+            onPress={() => dispatch({ type: 'formToggle', form: id })}
+          />
+        }
+      >
+        {open ? body : null}
+      </AskCard>
+    );
+  }
   const head = <AskHead icon={icon} tone={tone} title={str(form, 'title') || 'Questions'} detail={detail} />;
   if (error.length > 0) {
     return (
@@ -87,22 +123,9 @@ export function QuestionForm({ id, source }: { id: string; source: string }) {
       <PrimaryButton label={sendLabel} disabled={!canSend} onPress={() => dispatch({ type: 'formSend', form: id })} />
     </>
   );
-  const drafts = arr(form.drafts);
   return (
     <AskCard head={head} footer={footer}>
-      {questions.map((question, index) => (
-        <View key={index} style={index > 0 ? [styles.later, { borderTopColor: theme.ink(0.06) }] : undefined}>
-          <FormQuestion
-            formId={id}
-            index={index}
-            question={obj(question)}
-            draft={obj(drafts[index])}
-            otherLabel={str(form, 'otherLabel')}
-            enabled={enabled}
-            answered={phase === 'answered'}
-          />
-        </View>
-      ))}
+      {body}
     </AskCard>
   );
 }
@@ -222,5 +245,6 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13.5, minHeight: 38, textAlignVertical: 'top' },
   textAnswer: { minHeight: 70 },
   status: { flex: 1, fontSize: 12.5 },
+  answered: { fontSize: 12 },
   source: { fontFamily: MONO_FONT, fontSize: 12 },
 });

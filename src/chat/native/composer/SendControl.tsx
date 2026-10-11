@@ -2,7 +2,8 @@
  * Send / Stop / Queue (`send_control.rs`, React's `session-chat-composer.tsx` send button).
  *
  * - With text: tap sends; a hold of `interaction.queueLongPressMs` queues instead (the only queue
- *   gesture a phone has). A blocked Send stays pressable and dimmed; pressing it raises the core's
+ *   gesture a phone has), or, while the agent works, opens the Interrupt & Send / Queue choice
+ *   (`onHoldWhileWorking`). A blocked Send stays pressable and dimmed; pressing it raises the core's
  *   toast rather than locking the composer.
  * - Without text while the agent works: Stop (`interrupt`), then held for
  *   `interaction.stopButtonCooldownMs` so a second tap cannot land on the next turn.
@@ -24,12 +25,15 @@ export function SendControl({
   ready,
   submit,
   dispatch,
+  onHoldWhileWorking,
 }: {
   document: ChatDocument | null;
   hasDraft: boolean;
   ready: boolean;
   submit: NonNullable<RustChat['composer']>['submit'];
   dispatch: (action: UserAction) => void;
+  /** A hold on Send while the agent works: the screen offers Interrupt & Send and Queue. */
+  onHoldWhileWorking?: () => void;
 }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
@@ -65,7 +69,14 @@ export function SendControl({
     dispatch({ type: 'interrupt' });
   };
 
-  const label = stop ? 'Stop the agent' : canQueue ? 'Send (hold to queue)' : 'Send';
+  const choosesOnHold = working && hasDraft && onHoldWhileWorking !== undefined;
+  const label = stop
+    ? 'Stop the agent'
+    : choosesOnHold
+      ? 'Send (hold for Interrupt & Send or Queue)'
+      : canQueue
+        ? 'Send (hold to queue)'
+        : 'Send';
   return (
     <Pressable
       accessibilityRole="button"
@@ -86,7 +97,10 @@ export function SendControl({
         heldThisPress.current = true;
         // A hold is the queue gesture; where there is nothing to queue it does what a tap does.
         if (stop) onStop();
-        else if (canQueue) {
+        else if (choosesOnHold) {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onHoldWhileWorking();
+        } else if (canQueue) {
           if (submit('queue')) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         } else submit('send');
       }}

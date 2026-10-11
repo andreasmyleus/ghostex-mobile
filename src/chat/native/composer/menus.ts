@@ -122,6 +122,17 @@ function skillsRow(document: ChatDocument): MenuRow {
   return { label: 'Skills', iconPath: 'titlebar/sparkles.svg', children: skills };
 }
 
+/**
+ * CDXC:SessionChat 2026-10-11 DECISION:
+ * User: on the phone, while the agent works, a long press on Send opens a small sheet with "Interrupt & Send" and "Queue"; while it is idle a long press still just queues. More actions keeps its Interrupt & Send row too.
+ */
+export function sendChoiceRows({ ready, canQueue }: { ready: boolean; canQueue: boolean }): MenuRow[] {
+  return [
+    { label: 'Interrupt & Send', iconPath: 'titlebar/arrow-up.svg', disabled: !ready, command: { type: 'submit', mode: 'interrupt' } },
+    { label: 'Queue', iconPath: 'titlebar/stack-push.svg', disabled: !(ready && canQueue), command: { type: 'submit', mode: 'queue' } },
+  ];
+}
+
 export function moreActionsRows({ document, simple, verbose, available, serves, compactAndSend = null, interruptAndSend = null, draft = '' }: MoreActionsInput): MenuRow[] {
   const rows: MenuRow[] = [];
   if (interruptAndSend !== null) {

@@ -29,7 +29,7 @@ import { ContextEditorSheet } from './ContextEditorSheet';
 import { Glyph, type GlyphName } from './icons';
 import { IncomingDraftBar } from './IncomingDraftBar';
 import { isTrue, obj, str, type JsonRecord } from './json';
-import { COMPOSER_CONTROLS, moreActionsRows, optionMenuRows, overflowed, type ComposerControlId } from './menus';
+import { COMPOSER_CONTROLS, moreActionsRows, optionMenuRows, overflowed, sendChoiceRows, type ComposerControlId } from './menus';
 import { MenuSheet, type MenuRow } from './MenuSheet';
 import { ModelMenuSheet } from './ModelMenuSheet';
 import { NotePanel } from './NotePanel';
@@ -371,6 +371,12 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
     setMenu({ kind: 'rows', rows: moreActionsRows({ document, simple: simpleSetting, verbose, available, serves, compactAndSend, interruptAndSend, draft: model?.text ?? '' }) });
   }, [available, document, model, serves, simpleSetting, verboseSetting]);
 
+  /** Send held while the agent works: Interrupt & Send or Queue. */
+  const openSendChoices = useCallback(() => {
+    if (document === null || model === null) return;
+    setMenu({ kind: 'rows', rows: sendChoiceRows({ ready: model.ready, canQueue: document.queue.capabilities.canQueue === true }) });
+  }, [document, model]);
+
   /**
    * The Terminal View button's readiness light reads the agent's screen on hover or focus on
    * desktop (`terminal_ready.rs`), never on a timer. A phone has no hover, so the composer taking
@@ -461,6 +467,7 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
                 ready={model.ready}
                 submit={input.submit}
                 dispatch={dispatch}
+                onHoldWhileWorking={openSendChoices}
               />
             ) : null}
           </View>
@@ -507,6 +514,7 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
                   ready={model.ready}
                   submit={input.submit}
                   dispatch={dispatch}
+                  onHoldWhileWorking={openSendChoices}
                 />
               </View>
               {document !== null ? (

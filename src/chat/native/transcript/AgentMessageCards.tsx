@@ -1,9 +1,9 @@
 /**
  * The cards for messages between agents (desktop `inter_agent_message.rs`): one another agent sent
  * this session, one this session's agent sent another, and a subagent's reply. Each is one 40px row
- * (the agent's logo, its name, the message's first line, the time, the status and a chevron) that
- * opens to the whole message. Everything a card says is the core's `card` object
- * (`agent_message_card.rs`; the user's pick is the `CDXC:SessionChat 2026-10-11 DECISION` there);
+ * (the agent's logo, its name, one line of text that reads the same collapsed and opened, the time,
+ * the status and a chevron) that opens to the whole message. Everything a card says is the core's
+ * `card` object (`agent_message_card.rs`; the user's pick is the `CDXC:SessionChat 2026-10-12 DECISION` there);
  * this file only lays it out. The phone has no hover, so Go to session sits in the opened message.
  */
 
@@ -79,7 +79,7 @@ const AgentCard = memo(function AgentCard({
   const failure = str(card, 'failure');
   const retry = typeof card.retryPromptId === 'string' ? card.retryPromptId : null;
   const session = obj(card.session);
-  const detail = str(card, 'detail');
+  const line = str(card, 'line');
   const time = str(card, 'time');
   const hairline = theme.ink(theme.light ? 0.08 : 0.05);
   const showSession = failure.length === 0 && session !== null;
@@ -99,7 +99,7 @@ const AgentCard = memo(function AgentCard({
           {str(card, 'name')}
         </Text>
         <Text style={[styles.line, { color: open ? theme.muted : theme.cardMuted }]} numberOfLines={1}>
-          {open ? detail : str(card, 'preview')}
+          {line}
         </Text>
         {time.length > 0 ? <Text style={[styles.small, { color: theme.muted }]}>{time}</Text> : null}
         {status !== null ? <Status status={status} /> : null}

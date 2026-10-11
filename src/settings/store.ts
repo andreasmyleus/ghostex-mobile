@@ -22,6 +22,11 @@ const SETTINGS_STORAGE_KEY = 'settings.v1';
 
 export type BellBehavior = 'vibrate' | 'beep' | 'ignore';
 export type SessionChatTheme = 'dark' | 'light';
+/**
+ * How the chat colours the sections an agent marks: the desktop's `markedHandoversStyle` values, plus
+ * `plain` because the phone cannot see whether the computer's Marked handovers is on.
+ */
+export type MarkedHandoversStyle = 'labels' | 'rule' | 'badge' | 'plain';
 /** Same value space as the desktop app's global Default Agent View setting. */
 export type PreferredAgentInterface = 'terminal' | 'chat';
 
@@ -78,6 +83,7 @@ export type GhostexSettings = {
    * `build.sh --gpui` can; the switch is hidden otherwise.
    */
   sessionChatGpuiTranscript: boolean;
+  markedHandoversStyle: MarkedHandoversStyle;
   // SSH connection (appended group).
   autoReconnect: boolean;
   keepAliveEnabled: boolean;
@@ -149,6 +155,7 @@ export function defaultSettings(): GhostexSettings {
     sessionChatVerboseMode: false,
     sessionChatFileEditPreviews: false,
     sessionChatGpuiTranscript: false,
+    markedHandoversStyle: 'labels',
     autoReconnect: true,
     keepAliveEnabled: true,
     keepAliveIntervalSec: 30,
@@ -250,6 +257,13 @@ function sanitizeSettings(value: unknown): GhostexSettings {
     sessionChatSimpleMode: bool('sessionChatSimpleMode', defaults.sessionChatSimpleMode),
     sessionChatVerboseMode: bool('sessionChatVerboseMode', defaults.sessionChatVerboseMode),
     sessionChatGpuiTranscript: bool('sessionChatGpuiTranscript', defaults.sessionChatGpuiTranscript),
+    markedHandoversStyle:
+      record.markedHandoversStyle === 'labels' ||
+      record.markedHandoversStyle === 'rule' ||
+      record.markedHandoversStyle === 'badge' ||
+      record.markedHandoversStyle === 'plain'
+        ? record.markedHandoversStyle
+        : defaults.markedHandoversStyle,
     autoReconnect: bool('autoReconnect', defaults.autoReconnect),
     keepAliveEnabled: bool('keepAliveEnabled', defaults.keepAliveEnabled),
     keepAliveIntervalSec,

@@ -1,5 +1,5 @@
 import { isGpuiAvailable } from '../../../modules/gx-chat-core/src/gpui';
-import { useSettingsStore, type PreferredAgentInterface, type SessionChatTheme } from '../../settings/store';
+import { useSettingsStore, type MarkedHandoversStyle, type PreferredAgentInterface, type SessionChatTheme } from '../../settings/store';
 import { Caption, ChoiceRow, SectionHeader, SettingsScreenLayout, SettingToggle } from './SettingsControls';
 
 /** Same option order as the desktop app's Default Agent View control. */
@@ -13,9 +13,18 @@ const SESSION_CHAT_THEME_ROWS: { value: SessionChatTheme; label: string }[] = [
   { value: 'light', label: 'Light' },
 ];
 
+/** The desktop's Marked sections style options, in its order, plus Plain text (see `MarkedSections.tsx`). */
+const MARKED_HANDOVERS_STYLE_ROWS: { value: MarkedHandoversStyle; label: string }[] = [
+  { value: 'labels', label: 'Coloured labels' },
+  { value: 'rule', label: 'Thin left rule' },
+  { value: 'badge', label: 'Coloured badge' },
+  { value: 'plain', label: 'Plain text' },
+];
+
 export default function ChatPage() {
   const preferredAgentInterface = useSettingsStore((state) => state.settings.preferredAgentInterface);
   const sessionChatTheme = useSettingsStore((state) => state.settings.sessionChatTheme);
+  const markedHandoversStyle = useSettingsStore((state) => state.settings.markedHandoversStyle);
   const setSetting = useSettingsStore((state) => state.setSetting);
 
   return (
@@ -52,6 +61,21 @@ export default function ChatPage() {
       <Caption>Show the first seven code lines instead of only the path and change counts.</Caption>
       <SettingToggle settingKey='sessionChatVerboseMode' label='Verbose Mode' />
       <Caption>Expands thinking blocks to show their tool calls by default.</Caption>
+
+      <SectionHeader title='Marked sections' />
+      {MARKED_HANDOVERS_STYLE_ROWS.map((row) => (
+        <ChoiceRow
+          key={row.value}
+          label={row.label}
+          selected={markedHandoversStyle === row.value}
+          onPress={() => setSetting('markedHandoversStyle', row.value)}
+        />
+      ))}
+      <Caption>
+        How the chat colours the sections an agent marks with ❓ Needs you, ✅ Done, ⚠️ Read this and the other markers
+        (Marked handovers in the desktop app's Settings &gt; Chat). Every style except Plain text also shows a summary of what
+        needs you at the top of the message.
+      </Caption>
 
       {isGpuiAvailable() ? (
         <>

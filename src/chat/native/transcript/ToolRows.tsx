@@ -14,6 +14,7 @@ import { useNativeChatUi, useRowDetail, useTranscriptEnv } from './context';
 import { DisclosureBody, DisclosureHeading, useFoldPlace } from './Disclosure';
 import { Glyph, toolGlyph } from './icons';
 import { arr, obj, str, type JsonRecord } from './json';
+import { ShellCommandActions } from './MessageActions';
 import { useDisclosure } from './state';
 import { CODE_LINE, CODE_SIZE, MONO_FONT, PROSE_LINE, PROSE_SIZE } from './theme';
 
@@ -99,8 +100,8 @@ export function ToolRows({ message }: { message: ProjectedMessage }) {
 
 /**
  * A `!` command the user ran (`shellCard`, gx-chat-core's `shell_card`), in the user's bubble
- * (desktop `shell_command_card` in `tool_run.rs`): a header with the terminal glyph, the command, its
- * status and a copy button, opening onto the output alone. It shows in Simple mode too, since it is
+ * (desktop `shell_command_card` in `tool_run.rs`): a header with the terminal glyph, the command and
+ * its failure status, opening onto the output alone; the copy button sits outside the bubble. It shows in Simple mode too, since it is
  * what the user typed. A running card opens on its output by default and folds like every
  * disclosure, from the header or the rail.
  */
@@ -110,13 +111,7 @@ export function ShellCommandCard({ message }: { message: ProjectedMessage }) {
   const card = obj(message.shellCard);
   const hasBody = card?.hasBody === true;
   const [openState, toggle] = useDisclosure(disclosures, `shell:${message.id}`, card?.openByDefault === true);
-  const [copied, setCopied] = useState(false);
   const fullCommand = str(card, 'fullCommand');
-  const copy = useCallback(() => {
-    void Clipboard.setStringAsync(fullCommand);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }, [fullCommand]);
   const open = hasBody && openState;
   const failed = card?.failed === true;
   const status = str(card, 'status');
@@ -151,18 +146,10 @@ export function ShellCommandCard({ message }: { message: ProjectedMessage }) {
             <View style={styles.shellSpacer} />
             {status.length > 0 ? <Text style={[styles.shellStatus, { color: failed ? theme.error : theme.muted }]}>{status}</Text> : null}
           </Pressable>
-          {/* No hover on a phone, so the copy button always shows. */}
-          <Pressable
-            hitSlop={6}
-            onPress={copy}
-            accessibilityRole='button'
-            accessibilityLabel={copied ? 'Copied' : 'Copy command'}
-            style={({ pressed }) => [styles.copyAction, pressed && { backgroundColor: theme.pressed }]}
-          >
-            <Glyph name={copied ? 'check' : 'copy'} size={14} color={theme.muted} />
-          </Pressable>
         </View>
       </View>
+      {/* No hover on a phone, so the copy button always shows, with the prompts' own actions. */}
+      <ShellCommandActions command={fullCommand} />
       {/* The output opens in a bubble of its own below the header, which keeps its collapsed size;
           the header is its toggle, so it carries no rail. */}
       {open && blocks.length > 0 ? (

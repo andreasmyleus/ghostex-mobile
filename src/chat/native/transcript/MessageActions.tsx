@@ -195,6 +195,23 @@ export const UserActions = memo(function UserActions({ message }: { message: Pro
   );
 });
 
+/**
+ * The Copy button of a `!` command's bubble, where an ordinary prompt's actions go: right-aligned
+ * under the bubble (desktop `shell_command_copy_action`, which floats it left of the bubble).
+ *
+ * CDXC:SessionChat 2026-10-12 DECISION: User: "please move the copy button to be to the left of the command chat bubble (outside it floating, like it is for other messages)". The copy button is outside the command's bubble, with the message actions; it copies the bare command. See transcript/local_command.rs in gx-chat-core.
+ */
+export function ShellCommandActions({ command }: { command: string }) {
+  if (command.length === 0) return null;
+  return (
+    <View style={[styles.row, styles.userRow]}>
+      <View style={styles.buttons}>
+        <CopyButton text={command} label='Copy message' />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   userRow: { justifyContent: 'flex-end', paddingRight: 4 },

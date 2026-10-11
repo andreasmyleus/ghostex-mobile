@@ -28,6 +28,7 @@ import {
 } from './primitives';
 import { PanelBlocks } from './PanelBlocks';
 import { SideQuestionCard } from './SideQuestionCard';
+import { PassthroughCard, TerminalPickerCard } from './TerminalPickerCard';
 import type { CardHostAction } from './types';
 
 export function NoticeCard({
@@ -58,6 +59,12 @@ export function NoticeCard({
   const dialog = obj(notice.dialog);
   const rateLimit = choices.some((choice) => str(choice, 'label').startsWith('Wait here, then continue automatically'));
 
+  if (obj(obj(dialog?.presentation)?.picker) !== null) {
+    return <TerminalPickerCard chat={chat} document={document} notice={notice} />;
+  }
+  if (obj(notice.passthrough) !== null) {
+    return <PassthroughCard chat={chat} document={document} notice={notice} onHostAction={onHostAction} />;
+  }
   if (dialog !== null && Array.isArray(dialog.rows) && dialog.rows.length === 0) {
     if (obj(obj(dialog.presentation)?.sideQuestion) !== null) {
       return <SideQuestionCard chat={chat} dialog={dialog} />;

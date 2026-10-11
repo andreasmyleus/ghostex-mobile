@@ -133,10 +133,23 @@ export const UserActions = memo(function UserActions({ message }: { message: Pro
   const saved = flags.savedPrompts[message.id];
   // A rewind types into this session's own pane, so a subagent's transcript never offers one.
   const rewindable = main && message.canRewind === true && flags.rewindAvailable && flags.rewindEnabled;
+  // A message gxserver still holds for the agent can be taken back the way a queued row can
+  // (CDXC:SessionChat 2026-10-11 in server/src/session_chat_send_wake.rs; desktop `message_actions.rs`).
+  const waitingPromptId = message.startupDelivery?.state === 'queued' ? message.startupDelivery.promptId : null;
   return (
     <View style={[styles.row, styles.userRow]}>
       <MessageTime message={message} />
       <View style={styles.buttons}>
+        {waitingPromptId !== null && flags.canEditQueued ? (
+          <ActionButton
+            label='Edit message'
+            glyph='pencil'
+            onPress={() => dispatch({ type: 'removeQueue', promptId: waitingPromptId, edit: true })}
+          />
+        ) : null}
+        {waitingPromptId !== null && flags.canRemoveQueued ? (
+          <ActionButton label='Delete message' glyph='trash' onPress={() => dispatch({ type: 'removeQueue', promptId: waitingPromptId })} />
+        ) : null}
         {rewindable ? (
           <ActionButton
             label='Rewind to here'

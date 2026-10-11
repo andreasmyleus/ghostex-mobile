@@ -112,6 +112,9 @@ export type TranscriptFlags = {
   rewindEnabled: boolean;
   /** The host can stash (Save prompt on a user row). */
   canSavePrompt: boolean;
+  /** The queue's Edit and Delete, which a user row still waiting for the agent offers too. */
+  canEditQueued: boolean;
+  canRemoveQueued: boolean;
   deferredWork: { [itemId: string]: { loading: boolean; error?: string | null } };
 };
 
@@ -122,6 +125,8 @@ const EMPTY_FLAGS: TranscriptFlags = {
   rewindAvailable: false,
   rewindEnabled: false,
   canSavePrompt: false,
+  canEditQueued: false,
+  canRemoveQueued: false,
   deferredWork: {},
 };
 
@@ -140,6 +145,8 @@ export function transcriptFlags(document: ChatDocument | null): TranscriptFlags 
     rewindAvailable: document.rewindAvailable === true,
     rewindEnabled: document.rewindEnabled === true,
     canSavePrompt: obj(document.composerActions)?.stash === true,
+    canEditQueued: obj(obj(document.queue)?.capabilities)?.canEdit === true,
+    canRemoveQueued: obj(obj(document.queue)?.capabilities)?.canRemove === true,
     deferredWork: obj(document.deferredWork) === null ? {} : document.deferredWork,
   };
 }

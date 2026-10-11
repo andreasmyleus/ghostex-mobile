@@ -344,6 +344,8 @@ export type ChatDocument = {
   /** Ids of turns whose reply is final (per-message actions show only there).
    * Desktop: `message_actions.rs`. */
   finalIds: string[];
+  /** Pages published with `ghostex show` whose answers arrived (gx-chat-core `page_answers.rs`). */
+  answeredPages?: string[];
   /** Per completed-work row id: its on-demand read is loading, or failed with a retry.
    * Desktop: `deferred_work.rs`. */
   deferredWork: { [itemId: string]: DeferredWorkRow };

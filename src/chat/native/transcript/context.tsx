@@ -105,6 +105,8 @@ export function useTranscriptEnv(): TranscriptEnv {
 /** The document fields rows read, gathered once per document so rows compare cheaply. */
 export type TranscriptFlags = {
   finalIds: ReadonlySet<string>;
+  /** Pages whose answers arrived, so their cards read Answered (desktop `visual.rs`). */
+  answeredPages: ReadonlySet<string>;
   savedPrompts: { [messageId: string]: Json };
   rewindAvailable: boolean;
   rewindEnabled: boolean;
@@ -115,6 +117,7 @@ export type TranscriptFlags = {
 
 const EMPTY_FLAGS: TranscriptFlags = {
   finalIds: new Set(),
+  answeredPages: new Set(),
   savedPrompts: {},
   rewindAvailable: false,
   rewindEnabled: false,
@@ -132,6 +135,7 @@ export function transcriptFlags(document: ChatDocument | null): TranscriptFlags 
   if (document === null) return EMPTY_FLAGS;
   return {
     finalIds: new Set(arr(document.finalIds).filter((id): id is string => typeof id === 'string')),
+    answeredPages: new Set(arr(document.answeredPages).filter((id): id is string => typeof id === 'string')),
     savedPrompts: obj(document.savedPrompts) === null ? {} : document.savedPrompts,
     rewindAvailable: document.rewindAvailable === true,
     rewindEnabled: document.rewindEnabled === true,

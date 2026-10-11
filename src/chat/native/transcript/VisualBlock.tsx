@@ -14,8 +14,9 @@ import { Pressable, StyleSheet, Text, View, type GestureResponderEvent, type Lay
 import { useReducedMotion } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 
-import { useOptionalNativeChatUi, useTranscriptEnv } from './context';
+import { useOptionalNativeChatUi, useTranscriptEnv, useTranscriptFlags } from './context';
 import { Glyph } from './icons';
+import { answeredColor } from './PageAnswersCard';
 import { arr, num, obj, str, type JsonRecord } from './json';
 import { MONO_FONT, type TranscriptTheme } from './theme';
 
@@ -84,6 +85,7 @@ function regions(answer: JsonRecord | null): Region[] {
 
 export function VisualBlock({ source }: { source: string }) {
   const { theme, dispatch } = useTranscriptEnv();
+  const flags = useTranscriptFlags();
   const ui = useOptionalNativeChatUi();
   const [width, setWidth] = useState(0);
   const [showSource, setShowSource] = useState(false);
@@ -148,6 +150,9 @@ export function VisualBlock({ source }: { source: string }) {
   if (kind === 'page') {
     const url = str(answer, 'url');
     const file = str(answer, 'file');
+    const pageId = str(answer, 'pageId');
+    const answered = pageId.length > 0 && flags.answeredPages.has(pageId);
+    const detail = file.length > 0 ? `Interactive HTML page · ${file}` : 'Interactive HTML page';
     return (
       <Pressable
         style={({ pressed }) => [styles.page, { backgroundColor: theme.input, borderColor: theme.border }, pressed && { backgroundColor: theme.pressed }]}
@@ -164,9 +169,15 @@ export function VisualBlock({ source }: { source: string }) {
             {str(answer, 'title') || 'Page'}
           </Text>
           <Text numberOfLines={1} style={[styles.pageAddress, { color: theme.muted }]}>
-            {file.length > 0 ? `Interactive HTML page · ${file}` : 'Interactive HTML page'}
+            {answered ? `Your answers were sent · ${detail}` : detail}
           </Text>
         </View>
+        {answered ? (
+          <View style={[styles.answered, { backgroundColor: `${answeredColor(theme.light)}24` }]}>
+            <Glyph name='check' size={11} color={answeredColor(theme.light)} />
+            <Text style={[styles.answeredText, { color: answeredColor(theme.light) }]}>Answered</Text>
+          </View>
+        ) : null}
         <Text style={[styles.pageOpen, { color: theme.muted }]}>Open</Text>
       </Pressable>
     );
@@ -275,4 +286,6 @@ const styles = StyleSheet.create({
   pageTitle: { fontSize: 13.5, fontWeight: '600' },
   pageAddress: { fontSize: 11.5 },
   pageOpen: { fontSize: 11, fontWeight: '500' },
+  answered: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
+  answeredText: { fontSize: 11, fontWeight: '600' },
 });

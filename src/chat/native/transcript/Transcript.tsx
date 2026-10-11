@@ -107,6 +107,7 @@ export function TranscriptScope({ chat, main, children }: { chat: RustChat; main
       ? ''
       : JSON.stringify([
           document.finalIds,
+          document.answeredPages,
           document.savedPrompts,
           document.rewindAvailable,
           document.rewindEnabled,

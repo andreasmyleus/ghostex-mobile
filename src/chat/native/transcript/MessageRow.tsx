@@ -16,6 +16,7 @@ import { ImageRow } from './Images';
 import { arr, obj, str } from './json';
 import { Markdown } from './markdown/Markdown';
 import { DeliveryIndicator, hasReplyActions, isFlushReply, ReplyActions, UserActions } from './MessageActions';
+import { PageAnswersCard } from './PageAnswersCard';
 import { openTranscriptMenu } from './transcriptMenuStore';
 import { useDisclosure } from './state';
 import { estimatedLines, InterAgentCard, SentAgentMessageCards, StartupDelivery, SuppressedRow, SystemCard, TerminalToolRow } from './SystemRows';
@@ -30,6 +31,7 @@ export const MessageRow = memo(function MessageRow({ message }: { message: Proje
   const { theme } = useTranscriptEnv();
   if (message.pending === true) return <PendingRow user={message.role === 'user'} />;
   if (message.role === 'user' && obj(message.interAgentMessage) !== null) return <InterAgentCard message={message} />;
+  if (message.role === 'user' && obj(message.pageAnswers) !== null) return <PageAnswersCard message={message} />;
   if (obj(message.terminalTool) !== null) return <TerminalToolRow activity={message.terminalTool} />;
   if (message.shellCommand === true) return <ShellCommandCard message={message} />;
   if (message.role === 'user' && obj(message.suppressed) === null) return <UserMessage message={message} />;

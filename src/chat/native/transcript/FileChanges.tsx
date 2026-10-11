@@ -1,7 +1,7 @@
 /**
  * The file change card (desktop `file_change_card.rs`): a header that sums up the edit (pencil
  * tile, "Edited N files", the folder the files share, total +/-, a ratio bar), then a row per file
- * (chevron, file icon, name, folder, Edited/New/Deleted tag, counts, five-block change bar) that
+ * (chevron, file icon, name, folder, counts, five-block change bar) that
  * opens to its diff with old and new line numbers, "Show all N changed lines" and Open file.
  * Everything the card says comes from the core (`file_change_rows.rs`; the user's pick is the
  * `CDXC:SessionChat 2026-10-11 DECISION` on `file_change_card` there). The desktop header's Review
@@ -182,7 +182,6 @@ const FileChangeRow = memo(function FileChangeRow({
         <Text numberOfLines={1} ellipsizeMode='head' style={[styles.parent, { color: theme.muted }]}>
           {str(file, 'parent')}
         </Text>
-        <Text style={[styles.tag, { color: hue, backgroundColor: `${hue}21` }]}>{str(file, 'statusLabel')}</Text>
         {failed ? <Text style={[styles.failed, { color: theme.error }]}>Failed</Text> : null}
         <View style={styles.spacer} />
         <Counts added={num(file, 'added') ?? 0} removed={num(file, 'removed') ?? 0} />
@@ -295,7 +294,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth, minWidth: 0 },
   fileName: { fontSize: 13.5, fontWeight: '500', flexShrink: 0, maxWidth: '45%' },
   parent: { fontSize: 12.5, flexShrink: 1, minWidth: 0 },
-  tag: { fontSize: 10.5, fontWeight: '600', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 5, overflow: 'hidden' },
   failed: { fontSize: 12 },
   spacer: { flex: 1 },
   bars: { flexDirection: 'row', gap: 2 },

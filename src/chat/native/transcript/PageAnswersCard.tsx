@@ -36,12 +36,18 @@ export function PageAnswersCard({ message }: { message: ProjectedMessage }) {
     <StatusCard header={header}>
       {arr(answers?.rows).map((row, index) => {
         const label = str(row, 'label');
+        const note = str(row, 'note');
         return (
           <View key={index} style={styles.row}>
             {label.length > 0 ? <Text style={[styles.label, { color: theme.muted }]}>{label}</Text> : null}
             <Text selectable style={[styles.value, { color: theme.foreground }]}>
               {str(row, 'value')}
             </Text>
+            {note.length > 0 ? (
+              <Text selectable style={[styles.note, { color: theme.muted }]}>
+                {note}
+              </Text>
+            ) : null}
           </View>
         );
       })}
@@ -57,5 +63,6 @@ const styles = StyleSheet.create({
   row: { gap: 2 },
   label: { fontSize: 12.5, lineHeight: 17 },
   value: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
+  note: { fontSize: 13, lineHeight: 18 },
   more: { fontSize: 12 },
 });

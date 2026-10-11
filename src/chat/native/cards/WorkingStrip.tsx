@@ -192,9 +192,10 @@ function WorkingActivity({ activity }: { activity: Record<string, unknown> }) {
 }
 
 /**
- * The background tasks the agent left running: a muted line, then one row per task with its own
- * clock and "+N more" (`background_tasks.rs`; gx-chat-core words it). Pressing and holding a row
- * shows its command, as hover does on the desktop.
+ * The background tasks the agent left running: one row per task with its own clock and "+N more"
+ * (`background_tasks.rs`; gx-chat-core words it). Pressing and holding a row shows its command, as
+ * hover does on the desktop; tapping or holding the (i) by the clock shows what the row means, as
+ * its tooltip does there.
  */
 function BackgroundTasks({ tasks }: { tasks: JsonRecord }) {
   const styles = useStyles();
@@ -202,26 +203,30 @@ function BackgroundTasks({ tasks }: { tasks: JsonRecord }) {
     .map((row) => obj(row))
     .filter((row): row is JsonRecord => row !== null);
   const more = str(tasks, 'more');
-  const header = <Text style={styles.backgroundHeader}>{str(tasks, 'header')}</Text>;
-  const body = [
-    <View key="rows" style={styles.backgroundRows}>
+  const info = str(tasks, 'info');
+  const list = (
+    <View style={styles.backgroundRows}>
       {rows.map((row, index) => (
-        <BackgroundTaskRow key={str(row, 'id') || index} row={row} />
+        <BackgroundTaskRow key={str(row, 'id') || index} row={row} info={info} />
       ))}
-      {more.length > 0 ? <Text style={[styles.backgroundHeader, styles.backgroundMore]}>{more}</Text> : null}
-    </View>,
-  ];
+      {more.length > 0 ? (
+        // A remainder under named rows lines up with their titles; alone it is the line.
+        <Text style={[styles.backgroundMuted, rows.length > 0 ? styles.backgroundIndent : null]}>{more}</Text>
+      ) : null}
+    </View>
+  );
   return (
     <View accessibilityRole="progressbar" style={styles.fill}>
-      <StatusCard header={header} body={body} />
+      <StatusCard header={list} />
     </View>
   );
 }
 
-function BackgroundTaskRow({ row }: { row: JsonRecord }) {
+function BackgroundTaskRow({ row, info }: { row: JsonRecord; info: string }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
   const [revealed, setRevealed] = useState(false);
+  const [infoShown, setInfoShown] = useState(false);
   const prefix = str(row, 'prefix');
   const title = str(row, 'title');
   const command = str(row, 'command');
@@ -243,8 +248,22 @@ function BackgroundTaskRow({ row }: { row: JsonRecord }) {
           {prefix.length > 0 ? `${prefix} ` : ''}
           <Text style={styles.backgroundTitleStrong}>{title}</Text>
         </Text>
-        {elapsed.length > 0 ? <Text style={styles.activityClock}>{elapsed}</Text> : null}
+        <View style={styles.backgroundTrailing}>
+          {info.length > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={info}
+              hitSlop={8}
+              onPress={() => setInfoShown((shown) => !shown)}
+              onLongPress={() => setInfoShown(true)}
+            >
+              <Glyph name="info-circle" size={14} color={P.muted} />
+            </Pressable>
+          ) : null}
+          {elapsed.length > 0 ? <Text style={styles.activityClock}>{elapsed}</Text> : null}
+        </View>
       </View>
+      {infoShown ? <Text style={[styles.backgroundMuted, styles.backgroundIndent]}>{info}</Text> : null}
       {revealed ? <Text style={styles.backgroundCommand}>{command}</Text> : null}
     </Pressable>
   );
@@ -355,7 +374,7 @@ const useStyles = themedStyles((P) => ({
     fontWeight: '500',
     fontVariant: ['tabular-nums'],
   },
-  backgroundHeader: {
+  backgroundMuted: {
     color: P.muted,
     fontSize: 13,
     lineHeight: 19.5,
@@ -363,8 +382,13 @@ const useStyles = themedStyles((P) => ({
   backgroundRows: {
     gap: 6,
   },
-  backgroundMore: {
+  backgroundIndent: {
     paddingLeft: 22,
+  },
+  backgroundTrailing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   backgroundRow: {
     flexDirection: 'row',

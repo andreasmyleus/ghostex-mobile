@@ -23,6 +23,7 @@ const PALETTE: { [kind: string]: { dark: string; light: string } } = {
   need: { dark: '#60a5fa', light: '#2563eb' },
   done: { dark: '#4ade80', light: '#15803d' },
   read: { dark: '#fbbf24', light: '#b45309' },
+  kicked: { dark: '#f472b6', light: '#be185d' },
   progress: IN_PROGRESS,
   untested: { dark: '#2dd4bf', light: '#0f766e' },
   shipped: { dark: '#818cf8', light: '#4f46e5' },

@@ -13,12 +13,13 @@ import { useState } from 'react';
 import { Animated, Easing, Pressable, Text, View } from 'react-native';
 
 import type { ChatDocument } from '../../rust/document';
+import type { RustChat } from '../../rust/useRustChat';
 import { Glyph as ComposerGlyph } from '../composer/icons';
 import { Glyph, Spark } from './icons';
 import { arr, isTrue, num, obj, str } from './json';
 import type { JsonRecord } from './json';
 import { MONO_FONT, themedStyles, useTranscriptTheme } from '../transcript/theme';
-import { PulseDot, SWEEP_EASING, Spinner, StatusCard, useLoop } from './primitives';
+import { CardHeader, PulseDot, SWEEP_EASING, Spinner, StatusCard, useLoop } from './primitives';
 
 /** `packages/gx-chat-core/visual/working-strip.json`. */
 const VISUAL = {
@@ -41,10 +42,12 @@ const VISUAL = {
 export type ArmedAction = { id: 'delayedSend' | 'closeAfterDone'; label: string };
 
 export function WorkingStrip({
+  chat,
   document,
   armed = [],
   onArmedPress,
 }: {
+  chat: RustChat;
   document: ChatDocument;
   armed?: readonly ArmedAction[];
   /** Opens Delayed Actions; without it the items are drawn but not pressable. */
@@ -53,16 +56,17 @@ export function WorkingStrip({
   const styles = useStyles();
   const strip = document.workingStrip;
   const activity = obj(strip?.presentation);
+  const label = typeof strip?.label === 'string' ? strip.label : null;
   if (activity !== null) {
-    if (armed.length === 0) return <WorkingActivity activity={activity} />;
+    // A running turn keeps its word under a background-task card (the core sends both).
+    if (label === null && armed.length === 0) return <WorkingActivity chat={chat} activity={activity} />;
     return (
       <View style={styles.stack}>
-        <WorkingActivity activity={activity} />
-        <WorkingRow label={null} armed={armed} onArmedPress={onArmedPress} />
+        <WorkingActivity chat={chat} activity={activity} />
+        <WorkingRow label={label} armed={armed} onArmedPress={onArmedPress} />
       </View>
     );
   }
-  const label = typeof strip?.label === 'string' ? strip.label : null;
   if (label === null && armed.length === 0) return null;
   return <WorkingRow label={label} armed={armed} onArmedPress={onArmedPress} />;
 }
@@ -148,11 +152,11 @@ function WorkingSpark() {
  *
  * CDXC:SessionChat 2026-09-11 DECISION: User: put the compaction hint in an info-circle tooltip immediately right of the title, replacing the visible hint line.
  */
-function WorkingActivity({ activity }: { activity: Record<string, unknown> }) {
+function WorkingActivity({ chat, activity }: { chat: RustChat; activity: Record<string, unknown> }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
   const background = obj(activity.backgroundTasks);
-  if (background !== null) return <BackgroundTasks tasks={background} />;
+  if (background !== null) return <BackgroundTasks chat={chat} tasks={background} />;
   const percent = num(activity, 'percent');
   const indeterminate = isTrue(activity, 'indeterminate');
   const elapsed = str(activity, 'elapsedLabel');
@@ -195,9 +199,10 @@ function WorkingActivity({ activity }: { activity: Record<string, unknown> }) {
  * The background tasks the agent left running: one row per task with its own clock and "+N more"
  * (`background_tasks.rs`; gx-chat-core words it). Pressing and holding a row shows its command, as
  * hover does on the desktop; tapping or holding the (i) by the clock shows what the row means, as
- * its tooltip does there.
+ * its tooltip does there. Two or more tasks fold under one header drawn with the Threads panel's
+ * `CardHeader`, folded until tapped.
  */
-function BackgroundTasks({ tasks }: { tasks: JsonRecord }) {
+function BackgroundTasks({ chat, tasks }: { chat: RustChat; tasks: JsonRecord }) {
   const styles = useStyles();
   const rows = arr(tasks.rows)
     .map((row) => obj(row))
@@ -215,6 +220,29 @@ function BackgroundTasks({ tasks }: { tasks: JsonRecord }) {
       ) : null}
     </View>
   );
+  if (tasks.grouped === true) {
+    const open = tasks.open === true;
+    const header = (
+      <CardHeader
+        icon="terminal-2"
+        title={str(tasks, 'title')}
+        titleAddon={
+          <Text style={styles.backgroundMeta} numberOfLines={1}>
+            {str(tasks, 'meta')}
+          </Text>
+        }
+        chevron={open ? 'open' : 'closed'}
+        hasBody={open}
+        accessibilityLabel={open ? 'Hide background tasks' : 'Show background tasks'}
+        onPress={() => chat.dispatch({ type: 'toggleBackgroundTasks', open: !open })}
+      />
+    );
+    return (
+      <View accessibilityRole="progressbar" style={styles.fill}>
+        <StatusCard header={header} body={open ? [<View key="rows">{list}</View>] : []} />
+      </View>
+    );
+  }
   return (
     <View accessibilityRole="progressbar" style={styles.fill}>
       <StatusCard header={list} />
@@ -381,6 +409,13 @@ const useStyles = themedStyles((P) => ({
   },
   backgroundRows: {
     gap: 6,
+  },
+  /** The Threads panel's muted count (`AgentPanels.tsx` `meta`). */
+  backgroundMeta: {
+    flex: 1,
+    minWidth: 0,
+    color: P.cardMuted,
+    fontSize: 12,
   },
   backgroundIndent: {
     paddingLeft: 22,

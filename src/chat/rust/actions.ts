@@ -34,6 +34,8 @@ export type ActionFields = {
   /** A coordinator's Threads panel fold and its Done group. Desktop: `coordinator_threads.rs`. */
   toggleCoordinatorThreads: { open: boolean };
   toggleCoordinatorThreadsMore: { expanded: boolean };
+  /** The grouped background-task row's fold. Desktop: `background_tasks.rs`. */
+  toggleBackgroundTasks: { open: boolean };
   /** Open one of the coordinator's threads: gxserver resumes it if closed, then the host opens its tab. */
   openCoordinatorThread: { projectId: string; sessionId: string };
   searchOpen: {};

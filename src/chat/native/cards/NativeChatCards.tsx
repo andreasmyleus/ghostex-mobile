@@ -67,7 +67,7 @@ export function NativeChatCards({ chat, onHostAction, armed = NO_ARMED, onArmedP
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
     >
-      <WorkingStrip document={document} armed={armed} {...(onArmedPress !== undefined ? { onArmedPress } : {})} />
+      <WorkingStrip chat={chat} document={document} armed={armed} {...(onArmedPress !== undefined ? { onArmedPress } : {})} />
       <ComposerNotReadyCard chat={chat} document={document} onHostAction={onHostAction} />
       <CoordinatorThreadsPanel chat={chat} document={document} />
       <AgentTasksPanel chat={chat} document={document} />

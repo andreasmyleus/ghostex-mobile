@@ -21,7 +21,7 @@ import { openTranscriptMenu } from '../transcriptMenuStore';
 import { highlightText, useOwnFind, useRowFind, type RowFind } from '../searchHighlight';
 import { inlineText, parseMarkdown, type Block, type FenceHeader, type Inline } from './parse';
 import { fitTableColumns } from './tableLayout';
-import { MarkedSection, MarkedSummary, useMarkedStyle, type SectionRefs } from './MarkedSections';
+import { MarkedSection, useMarkedStyle } from './MarkedSections';
 
 type Reference = { label: string; kind: string };
 
@@ -450,8 +450,6 @@ type BlockProps = { blocks: Block[]; context: InlineContext; color: string; dept
 function Blocks({ blocks, context, color, depth, listDepth }: BlockProps) {
   const { theme } = context;
   const markedStyle = useMarkedStyle();
-  // The reply's marked sections, which its summary chips scroll to.
-  const sections = useMemo<SectionRefs>(() => new Map(), []);
   return (
     <>
       {blocks.map((block, index) => {
@@ -508,13 +506,6 @@ function Blocks({ blocks, context, color, depth, listDepth }: BlockProps) {
             );
           case 'hr':
             return <View key={key} style={[styles.rule, { backgroundColor: theme.border }, spacing]} />;
-          case 'summary':
-            if (markedStyle === 'plain') return null;
-            return (
-              <View key={key} style={spacing}>
-                <MarkedSummary chips={block.chips} theme={theme} sections={sections} />
-              </View>
-            );
           case 'section':
             return (
               <View key={key} style={spacing}>
@@ -523,7 +514,6 @@ function Blocks({ blocks, context, color, depth, listDepth }: BlockProps) {
                   style={markedStyle}
                   theme={theme}
                   color={color}
-                  sections={sections}
                   selectable={context.selectable}
                   all={<Blocks blocks={block.all} context={context} color={color} depth={depth + 1} listDepth={listDepth} />}
                   rest={

@@ -37,7 +37,6 @@ import { useTranscriptTheme } from './theme';
 import { TranscriptItemView } from './TranscriptItemRow';
 import { QuestionFormsProvider } from './QuestionForm';
 import { RowFindContext, type RowFind } from './searchHighlight';
-import { setMarkedSectionRevealer } from './markdown/MarkedSections';
 
 /**
  * `scroll-bottom.json`: the pill's look and how far from the bottom it appears.
@@ -248,19 +247,6 @@ export function NativeTranscript({ chat, items, main = true }: NativeTranscriptP
     },
     [dispatch, main]
   );
-
-  // A reply's summary chip brings its marked section to the top of the list (`MarkedSections.tsx`).
-  useEffect(() => {
-    if (!main) return;
-    setMarkedSectionRevealer((windowY) => {
-      (listRef.current?.getNativeScrollRef() as View | null | undefined)?.measureInWindow((_x, listY) => {
-        // Inverted: the offset is the distance from the bottom, so content above is a larger offset.
-        const delta = windowY - listY - 16;
-        listRef.current?.scrollToOffset({ offset: Math.max(0, collapse.current.offset - delta), animated: true });
-      });
-    });
-    return () => setMarkedSectionRevealer(null);
-  }, [main]);
 
   const jumpToBottom = useCallback(() => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });

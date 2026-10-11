@@ -28,12 +28,9 @@ const QUESTIONS_OPEN = `${MARK}questions:`;
 const QUESTIONS_CLOSE = `${MARK}/questions`;
 const SECTION_OPEN = `${MARK}section:`;
 const SECTION_CLOSE = `${MARK}/section`;
-const SUMMARY_OPEN = `${MARK}summary:`;
 
 /** A marked section of an agent's reply, as the core described it (`marked_sections.rs`). */
-export type SectionMeta = { kind: string; index: number; emoji: string; name: string; label: string; labelRepeats: boolean; lead: string };
-/** One chip of a reply's summary strip. */
-export type SummaryChip = { kind: string; emoji: string; count: number; text: string; section: number };
+export type SectionMeta = { kind: string; emoji: string; name: string; label: string; labelRepeats: boolean; lead: string };
 
 export type Inline =
   | { t: 'text'; v: string }
@@ -71,8 +68,6 @@ export type Block =
    * the first and `lead` the rest of the first line, for the styles that draw their own first line.
    */
   | { t: 'section'; meta: SectionMeta; all: Block[]; rest: Block[]; lead: Inline[] }
-  /** The chips counting a reply's marked sections. */
-  | { t: 'summary'; chips: SummaryChip[] }
   | { t: 'hr' };
 
 export type ParseOptions = {
@@ -197,7 +192,7 @@ class BlockParser {
   /** Whether `line` starts a block that ends a running paragraph. */
   private interrupts(line: string): boolean {
     if (FENCE.test(line) || ATX.test(line) || HR.test(line) || QUOTE.test(line)) return true;
-    if (line.startsWith(SECTION_OPEN) || line === SECTION_CLOSE || line.startsWith(SUMMARY_OPEN)) return true;
+    if (line.startsWith(SECTION_OPEN) || line === SECTION_CLOSE) return true;
     if (line.startsWith(ALERT_OPEN) || line === TABLE_OPEN || line === MERMAID_OPEN || line === VISUAL_OPEN || line.startsWith(QUESTIONS_OPEN)) return true;
     const marker = listMarker(line);
     // Only a bullet, or an ordered item starting at 1, interrupts a paragraph (CommonMark).
@@ -223,11 +218,6 @@ class BlockParser {
         }
         out.push({ t: 'alert', kind: line.slice(ALERT_OPEN.length).trim(), c: this.blocks(lines.slice(index + 1, end)) });
         index = end + 1;
-        continue;
-      }
-      if (line.startsWith(SUMMARY_OPEN)) {
-        out.push({ t: 'summary', chips: parseJson<SummaryChip[]>(line.slice(SUMMARY_OPEN.length), []) });
-        index += 1;
         continue;
       }
       if (line.startsWith(SECTION_OPEN)) {

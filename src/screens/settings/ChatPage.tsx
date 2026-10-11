@@ -73,8 +73,7 @@ export default function ChatPage() {
       ))}
       <Caption>
         How the chat colours the sections an agent marks with ❓ Needs you, ✅ Done, ⚠️ Read this and the other markers
-        (Marked handovers in the desktop app's Settings &gt; Chat). Every style except Plain text also shows a summary of what
-        needs you at the top of the message.
+        (Marked handovers in the desktop app's Settings &gt; Chat).
       </Caption>
 
       {isGpuiAvailable() ? (

@@ -58,12 +58,13 @@ export function WorkingStrip({
   const activity = obj(strip?.presentation);
   const label = typeof strip?.label === 'string' ? strip.label : null;
   if (activity !== null) {
-    // A running turn keeps its word under a background-task card (the core sends both).
+    // A running turn keeps its word beside a background-task card (the core sends both); the word
+    // always comes first, above every card (desktop `working_strip.rs`).
     if (label === null && armed.length === 0) return <WorkingActivity chat={chat} activity={activity} />;
     return (
       <View style={styles.stack}>
-        <WorkingActivity chat={chat} activity={activity} />
         <WorkingRow label={label} armed={armed} onArmedPress={onArmedPress} />
+        <WorkingActivity chat={chat} activity={activity} />
       </View>
     );
   }

@@ -125,6 +125,8 @@ export type ActionFields = {
   sendQueue: { promptId: string };
   reorderQueue: { promptIds: string[] };
   moveQueue: { promptId: string; targetId: string };
+  /** Back to composer: takes a message the agent itself queued back into the composer. */
+  takeBackQueued: { messageId?: string };
 
   // ---- questions, approvals and notices -----------------------------------------------------
   /** Answer the blocking prompt or a terminal dialog. Desktop: `approval.rs`, `notice.rs`,

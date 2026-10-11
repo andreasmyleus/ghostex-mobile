@@ -114,6 +114,9 @@ export function TranscriptScope({ chat, main, children }: { chat: RustChat; main
           document.rewindAvailable,
           document.rewindEnabled,
           obj(document.composerActions)?.stash,
+          obj(document.queue)?.capabilities,
+          document.queueTakeBackIds,
+          document.queueTakeBackBusy,
           document.deferredWork,
         ]);
   const flags = useMemo(() => transcriptFlags(document), [flagsSignature]); // eslint-disable-line react-hooks/exhaustive-deps

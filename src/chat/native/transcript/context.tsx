@@ -115,6 +115,10 @@ export type TranscriptFlags = {
   /** The queue's Edit and Delete, which a user row still waiting for the agent offers too. */
   canEditQueued: boolean;
   canRemoveQueued: boolean;
+  /** Messages the agent itself queued, which Back to composer takes back into the composer. */
+  takeBackIds: ReadonlySet<string>;
+  /** The message a Back to composer is taking back right now. */
+  takeBackBusy: string | null;
   deferredWork: { [itemId: string]: { loading: boolean; error?: string | null } };
 };
 
@@ -127,6 +131,8 @@ const EMPTY_FLAGS: TranscriptFlags = {
   canSavePrompt: false,
   canEditQueued: false,
   canRemoveQueued: false,
+  takeBackIds: new Set(),
+  takeBackBusy: null,
   deferredWork: {},
 };
 
@@ -147,6 +153,8 @@ export function transcriptFlags(document: ChatDocument | null): TranscriptFlags 
     canSavePrompt: obj(document.composerActions)?.stash === true,
     canEditQueued: obj(obj(document.queue)?.capabilities)?.canEdit === true,
     canRemoveQueued: obj(obj(document.queue)?.capabilities)?.canRemove === true,
+    takeBackIds: new Set(arr(document.queueTakeBackIds).filter((id): id is string => typeof id === 'string')),
+    takeBackBusy: typeof document.queueTakeBackBusy === 'string' ? document.queueTakeBackBusy : null,
     deferredWork: obj(document.deferredWork) === null ? {} : document.deferredWork,
   };
 }

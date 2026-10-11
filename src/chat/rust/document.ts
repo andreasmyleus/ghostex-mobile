@@ -373,6 +373,15 @@ export type ChatDocument = {
 
   /** Ghostex's own prompt queue above the composer. Desktop: `queue.rs`, `send_control.rs`. */
   queue: Queue;
+  /**
+   * The messages the agent itself queued that Back to composer is offered on, oldest first.
+   * Desktop: `message_actions.rs`; the core's `composer/queue_take_back.rs`.
+   */
+  queueTakeBackIds: string[];
+  /** The message a Back to composer is taking back right now, or null. */
+  queueTakeBackBusy: string | null;
+  /** The desktop composer's key for Back to composer, which its tooltip names. */
+  queueTakeBackHotkey: string;
   /** The cross-client composer draft. Desktop: `composer.rs` (incoming draft bar). */
   draft: DraftState;
   /** Placeholder text for the composer field. Desktop: `state.rs` (`ensure_input`). */

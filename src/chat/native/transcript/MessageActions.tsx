@@ -126,7 +126,7 @@ export function DeliveryIndicator({ message }: { message: ProjectedMessage }) {
 }
 
 export const UserActions = memo(function UserActions({ message }: { message: ProjectedMessage }) {
-  const { dispatch, main } = useTranscriptEnv();
+  const { dispatch, main, theme } = useTranscriptEnv();
   const flags = useTranscriptFlags();
   const prompt = typeof message.copyText === 'string' ? message.copyText : '';
   if (prompt.length === 0) return null;
@@ -136,6 +136,11 @@ export const UserActions = memo(function UserActions({ message }: { message: Pro
   // A message gxserver still holds for the agent can be taken back the way a queued row can
   // (CDXC:SessionChat 2026-10-11 in server/src/session_chat_send_wake.rs; desktop `message_actions.rs`).
   const waitingPromptId = message.startupDelivery?.state === 'queued' ? message.startupDelivery.promptId : null;
+  // A message the agent itself queued comes back to the composer (CDXC:SessionChat 2026-10-11 in
+  // packages/gx-chat-core/src/composer/queue_take_back.rs). The desktop also takes the newest one
+  // back with Up in an empty composer; the phone has no hotkey.
+  const takeable = main && flags.takeBackIds.has(message.id);
+  const takingBack = flags.takeBackBusy === message.id;
   return (
     <View style={[styles.row, styles.userRow]}>
       <MessageTime message={message} />
@@ -145,6 +150,18 @@ export const UserActions = memo(function UserActions({ message }: { message: Pro
             label='Edit message'
             glyph='pencil'
             onPress={() => dispatch({ type: 'removeQueue', promptId: waitingPromptId, edit: true })}
+          />
+        ) : null}
+        {takeable && takingBack ? (
+          <View style={styles.button} accessibilityRole='progressbar' accessibilityLabel='Taking the message back'>
+            <ActivityIndicator size={13} color={theme.muted} />
+          </View>
+        ) : null}
+        {takeable && !takingBack ? (
+          <ActionButton
+            label='Back to composer'
+            glyph='arrow-back-up'
+            onPress={() => dispatch({ type: 'takeBackQueued', messageId: message.id })}
           />
         ) : null}
         {waitingPromptId !== null && flags.canRemoveQueued ? (

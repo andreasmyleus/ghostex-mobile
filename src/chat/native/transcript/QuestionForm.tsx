@@ -154,7 +154,7 @@ function FormQuestion({
     <View style={styles.question}>
       <View style={styles.questionHead}>
         {tag.length > 0 ? (
-          <Text style={[styles.tag, { color: theme.muted, borderColor: theme.border }]}>{tag}</Text>
+          <Text style={[styles.tag, { color: theme.muted, backgroundColor: `${theme.muted}2e` }]}>{tag}</Text>
         ) : null}
         <Text style={[styles.questionTitle, { color: theme.foreground }]}>{str(question, 'title')}</Text>
       </View>
@@ -270,7 +270,7 @@ function ChoiceRow({
       <View style={styles.choiceBody}>
         <View style={styles.choiceLine}>
           <Text style={[styles.choiceLabel, { color: other && !picked ? theme.cardMuted : theme.foreground }]}>
-            {letter(number)}) {label}
+            {label}
           </Text>
           {recommended ? (
             <Text style={[styles.recommended, { color: primary, borderColor: `${primary}99` }]}>Recommended</Text>
@@ -278,6 +278,8 @@ function ChoiceRow({
         </View>
         {detail.length > 0 ? <Text style={[styles.detail, { color: theme.cardMuted }]}>{detail}</Text> : null}
       </View>
+      {/* The letter the reader can refer to ("do b"), as a muted keycap at the row's end. */}
+      <Text style={[styles.keycap, { color: picked ? theme.foreground : theme.muted, borderColor: theme.border }]}>{letter(number)}</Text>
     </Pressable>
   );
 }
@@ -289,9 +291,11 @@ const styles = StyleSheet.create({
   answered: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
   answeredLabel: { fontSize: 11, fontWeight: '600' },
   question: { gap: 6 },
-  questionHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  tag: { fontFamily: MONO_FONT, fontSize: 11, lineHeight: 17, paddingHorizontal: 7, borderWidth: 1, borderRadius: 999, overflow: 'hidden' },
-  questionTitle: { flex: 1, fontSize: 15, lineHeight: 21, fontWeight: '500' },
+  // The user's pick (desktop question_form.rs): the tag is a filled chip above the title.
+  questionHead: { alignItems: 'flex-start', gap: 4 },
+  tag: { fontFamily: MONO_FONT, fontSize: 10.5, lineHeight: 18, fontWeight: '500', paddingHorizontal: 7, borderRadius: 999, overflow: 'hidden' },
+  keycap: { minWidth: 20, height: 20, paddingHorizontal: 4, marginTop: 0.5, borderWidth: 1, borderRadius: 4, fontFamily: MONO_FONT, fontSize: 11.5, lineHeight: 18, fontWeight: '500', textAlign: 'center', overflow: 'hidden' },
+  questionTitle: { alignSelf: 'stretch', fontSize: 15, lineHeight: 21, fontWeight: '500' },
   detail: { fontSize: 13, lineHeight: 18 },
   hint: { fontSize: 12 },
   choice: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, borderRadius: 8 },

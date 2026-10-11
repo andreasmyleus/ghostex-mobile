@@ -346,6 +346,8 @@ export type ChatDocument = {
   finalIds: string[];
   /** Pages published with `ghostex show` whose answers arrived (gx-chat-core `page_answers.rs`). */
   answeredPages?: string[];
+  /** The question forms (```questions blocks) by id (`questions/forms.rs`). */
+  questionForms?: { [id: string]: Json };
   /** Per completed-work row id: its on-demand read is loading, or failed with a retry.
    * Desktop: `deferred_work.rs`. */
   deferredWork: { [itemId: string]: DeferredWorkRow };

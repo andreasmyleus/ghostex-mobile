@@ -35,6 +35,7 @@ import {
 import { arr, num, obj, str } from './json';
 import { useTranscriptTheme } from './theme';
 import { TranscriptItemView } from './TranscriptItemRow';
+import { QuestionFormsProvider } from './QuestionForm';
 import { RowFindContext, type RowFind } from './searchHighlight';
 
 /**
@@ -73,6 +74,7 @@ const ROW_MAX_WIDTH = 768;
 
 const EMPTY_DETAILS = {};
 const EMPTY_IMAGES = {};
+const EMPTY_FORMS = {};
 
 export type NativeTranscriptProps = {
   chat: RustChat;
@@ -115,11 +117,16 @@ export function TranscriptScope({ chat, main, children }: { chat: RustChat; main
           document.deferredWork,
         ]);
   const flags = useMemo(() => transcriptFlags(document), [flagsSignature]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Only the forms read this, and it changes with every pick, so it rides apart from the flags.
+  const formsSignature = JSON.stringify(document?.questionForms ?? null);
+  const forms = useMemo(() => document?.questionForms ?? EMPTY_FORMS, [formsSignature]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <TranscriptEnvProvider value={env}>
       <TranscriptFlagsProvider value={flags}>
         <RowDetailsProvider value={state?.rowDetails ?? EMPTY_DETAILS}>
-          <ChatImagesProvider value={state?.images ?? EMPTY_IMAGES}>{children}</ChatImagesProvider>
+          <ChatImagesProvider value={state?.images ?? EMPTY_IMAGES}>
+            <QuestionFormsProvider value={forms}>{children}</QuestionFormsProvider>
+          </ChatImagesProvider>
         </RowDetailsProvider>
       </TranscriptFlagsProvider>
     </TranscriptEnvProvider>

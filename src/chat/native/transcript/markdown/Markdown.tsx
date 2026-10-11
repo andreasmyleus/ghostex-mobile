@@ -16,6 +16,7 @@ import { arr, obj, str, type JsonRecord } from '../json';
 import { CODE_SIZE, MONO_FONT, PROSE_LINE, PROSE_SIZE, type TranscriptTheme } from '../theme';
 import { InlineImage } from '../Images';
 import { VisualBlock } from '../VisualBlock';
+import { QuestionForm } from '../QuestionForm';
 import { openTranscriptMenu } from '../transcriptMenuStore';
 import { highlightText, useOwnFind, useRowFind, type RowFind } from '../searchHighlight';
 import { inlineText, parseMarkdown, type Block, type FenceHeader, type Inline } from './parse';
@@ -493,6 +494,12 @@ function Blocks({ blocks, context, color, depth, listDepth }: BlockProps) {
             return (
               <View key={key} style={spacing}>
                 <VisualBlock source={block.source} />
+              </View>
+            );
+          case 'questions':
+            return (
+              <View key={key} style={spacing}>
+                <QuestionForm id={block.id} source={block.source} />
               </View>
             );
           case 'hr':

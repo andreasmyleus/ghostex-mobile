@@ -24,6 +24,8 @@ const MERMAID_OPEN = `${MARK}mermaid`;
 const MERMAID_CLOSE = `${MARK}/mermaid`;
 const VISUAL_OPEN = `${MARK}visual`;
 const VISUAL_CLOSE = `${MARK}/visual`;
+const QUESTIONS_OPEN = `${MARK}questions:`;
+const QUESTIONS_CLOSE = `${MARK}/questions`;
 
 export type Inline =
   | { t: 'text'; v: string }
@@ -54,6 +56,8 @@ export type Block =
   | { t: 'table'; head: Inline[][]; align: Align[]; rows: Inline[][][]; source: string }
   /** A finished ```visual fence: the block's JSON, drawn by `VisualBlock` (desktop `visual.rs`). */
   | { t: 'visual'; source: string }
+  /** A finished ```questions fence: the form's id and its lines, drawn by `QuestionForm` (desktop `question_form.rs`). */
+  | { t: 'questions'; id: string; source: string }
   | { t: 'hr' };
 
 export type ParseOptions = {
@@ -170,7 +174,7 @@ class BlockParser {
   /** Whether `line` starts a block that ends a running paragraph. */
   private interrupts(line: string): boolean {
     if (FENCE.test(line) || ATX.test(line) || HR.test(line) || QUOTE.test(line)) return true;
-    if (line.startsWith(ALERT_OPEN) || line === TABLE_OPEN || line === MERMAID_OPEN || line === VISUAL_OPEN) return true;
+    if (line.startsWith(ALERT_OPEN) || line === TABLE_OPEN || line === MERMAID_OPEN || line === VISUAL_OPEN || line.startsWith(QUESTIONS_OPEN)) return true;
     const marker = listMarker(line);
     // Only a bullet, or an ordered item starting at 1, interrupts a paragraph (CommonMark).
     return marker !== null && marker.indent <= 3 && marker.rest.length > 0 && (!marker.ordered || marker.start === 1);
@@ -201,6 +205,13 @@ class BlockParser {
       // phone does not draw diagrams yet, so the fence inside shows as the code block it is.
       if (line === MERMAID_OPEN || line === MERMAID_CLOSE) {
         index += 1;
+        continue;
+      }
+      if (line.startsWith(QUESTIONS_OPEN)) {
+        let end = index + 1;
+        while (end < lines.length && lines[end] !== QUESTIONS_CLOSE) end += 1;
+        out.push({ t: 'questions', id: line.slice(QUESTIONS_OPEN.length), source: fenceSource(lines.slice(index + 1, end)) });
+        index = end + 1;
         continue;
       }
       if (line === VISUAL_OPEN) {

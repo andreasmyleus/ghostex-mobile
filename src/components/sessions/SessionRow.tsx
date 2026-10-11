@@ -165,7 +165,7 @@ function CoordinatorBadgeView({ badge }: { badge: CoordinatorBadge }) {
         : SidebarPalette.MUTED;
   return (
     <View style={styles.coordinatorBadge}>
-      <CrewGlyph size={ds(13)} color={tint} />
+      <CrewGlyph size={ds(13.55)} color={tint} />
       {badge.count > 0 ? <Text style={[styles.coordinatorBadgeCount, { color: tint }]}>{badge.count}</Text> : null}
     </View>
   );
@@ -474,8 +474,8 @@ const styles = StyleSheet.create({
     gap: ds(2),
   },
   coordinatorBadgeCount: {
-    fontSize: ds(11.5),
-    lineHeight: ds(16),
+    fontSize: ds(13.55),
+    lineHeight: ds(20),
   },
   noteDot: {
     position: 'absolute',

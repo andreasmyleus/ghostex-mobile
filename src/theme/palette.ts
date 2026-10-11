@@ -102,6 +102,10 @@ export const SidebarPalette = {
   HEADER_BUTTON_BG: 'rgba(42,42,42,0.88)',
   /** Header square-button border: --app-border (white 11%) at 92%. */
   HEADER_BUTTON_BORDER: 'rgba(255,255,255,0.10)',
+  /** The rounded track behind the Space row (desktop `space_track_fill`, white 4%). */
+  SPACE_TRACK_BG: 'rgba(255,255,255,0.04)',
+  /** The Space row track's hairline (desktop `space_track_outline`, white 5%). */
+  SPACE_TRACK_BORDER: 'rgba(255,255,255,0.05)',
   /** Neutral header button icon. */
   HEADER_BUTTON_ICON: '#AAB0B8',
   /** Context menu surface: mix(--app-card #252525 92%, #000 8%). */

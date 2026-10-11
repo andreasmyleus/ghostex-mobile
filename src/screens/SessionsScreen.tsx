@@ -1397,31 +1397,26 @@ export default function SessionsScreen({ navigation }: Props) {
         A machine with no Spaces has nothing to switch between — Other alone
         would be every project — so the row appears only once it has one.
       */}
-      {machine !== null && showWorkspaceTile && selectedWorkspace !== null ? (
-        <View style={styles.workspaceRow}>
-          <WorkspaceTile
-            workspace={selectedWorkspace}
-            switchTo={workspaceSwitchTo}
-            onSwitch={(workspaceId) => selectWorkspace(machine.id, workspaceId)}
-            onOpenMenu={() => setWorkspaceMenuOpen(true)}
-          />
+      {machine !== null && ((showWorkspaceTile && selectedWorkspace !== null) || spaceItems.length > 0) ? (
+        <View style={styles.spaceTrack}>
+          {showWorkspaceTile && selectedWorkspace !== null ? (
+            <WorkspaceTile
+              workspace={selectedWorkspace}
+              switchTo={workspaceSwitchTo}
+              onSwitch={(workspaceId) => selectWorkspace(machine.id, workspaceId)}
+              onOpenMenu={() => setWorkspaceMenuOpen(true)}
+            />
+          ) : null}
           {spaceItems.length > 0 ? (
             <SpaceTabs
               spaces={spaceItems}
               selectedSpaceId={selectedSpaceId}
               countsBySpaceId={spaceCounts}
               onSelect={(spaceId) => selectSpace(machine.id, spaceId)}
-              style={styles.workspaceRowSpaces}
+              style={styles.spaceTrackSpaces}
             />
           ) : null}
         </View>
-      ) : machine !== null && spaceItems.length > 0 ? (
-        <SpaceTabs
-          spaces={spaceItems}
-          selectedSpaceId={selectedSpaceId}
-          countsBySpaceId={spaceCounts}
-          onSelect={(spaceId) => selectSpace(machine.id, spaceId)}
-        />
       ) : null}
       {machine !== null && workspaceMenuOpen && machineWorkspaces !== null && selectedWorkspaceId !== null ? (
         <ContextMenu

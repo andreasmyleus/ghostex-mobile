@@ -5,7 +5,12 @@
 import { StyleSheet } from 'react-native';
 
 import { ds, PROJECT_RAIL_WIDTH, SIDEBAR_BACKGROUND } from '../../components/sessions/rows';
-import { GhostexPalette, GhostexRadii } from '../../theme/palette';
+import { GhostexPalette, GhostexRadii, GhostexStrokeWidth, SidebarPalette } from '../../theme/palette';
+
+/** The track's padding around the tile and chips. */
+const SPACE_TRACK_PADDING = 3;
+/** A Space chip's height (SpaceTabs `SPACE_CHIP_HEIGHT`) plus the track's padding and hairline. */
+const SPACE_TRACK_HEIGHT = 30 + 2 * (SPACE_TRACK_PADDING + GhostexStrokeWidth);
 
 export const styles = StyleSheet.create({
   container: {
@@ -92,26 +97,40 @@ export const styles = StyleSheet.create({
     flex: 1,
     marginTop: 12,
   },
-  /** The workspace tile, then the Space row; fixed height so the list cannot squeeze it. */
-  workspaceRow: {
+  /**
+   * The rounded track behind the workspace tile and the Space row, hugging them from the left and
+   * scrolling inside itself once the chips outgrow the line; fixed height so the list cannot
+   * squeeze it.
+   *
+   * CDXC:Spaces 2026-10-11 SEE-ALSO:
+   * The desktop's Space row became a left-aligned rounded track (user decision on `space_track_fill`
+   * in apps/desktop/src/app/native_sidebar/selectors.rs); the phone follows.
+   */
+  spaceTrack: {
     marginTop: 6,
-    height: 30,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    height: SPACE_TRACK_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    padding: SPACE_TRACK_PADDING,
+    borderRadius: GhostexRadii.pill,
+    borderWidth: GhostexStrokeWidth,
+    borderColor: SidebarPalette.SPACE_TRACK_BORDER,
+    backgroundColor: SidebarPalette.SPACE_TRACK_BG,
     flexShrink: 0,
+    overflow: 'hidden',
   },
   /**
-   * The Space row beside the tile takes the rest of the line; the row above owns the top margin.
-   * SpaceTabs' own box sets `flexGrow: 0, flexShrink: 0`, and Yoga lets an explicit flexGrow win
-   * over the `flex` shorthand while `flex: 1` still zeroes the basis, so a bare `flex: 1` here left
-   * the chips a 0-wide box. The grow, shrink and basis are therefore all spelled out.
+   * The Space row inside the track: as wide as its chips, shrinking (and scrolling) once they
+   * outgrow the line. The track owns the top margin. SpaceTabs' own box sets `flexShrink: 0`, so the
+   * shrink is spelled out here.
    */
-  workspaceRowSpaces: {
+  spaceTrackSpaces: {
     marginTop: 0,
-    flexGrow: 1,
+    flexGrow: 0,
     flexShrink: 1,
-    flexBasis: 0,
     minWidth: 0,
   },
   listContent: {

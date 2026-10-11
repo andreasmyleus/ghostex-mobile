@@ -68,9 +68,11 @@ export function AskTile({ icon, tone }: { icon: GlyphName; tone: AskTone }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
   const hue = toneColor(tone, P);
+  // A waiting question's amber is a light tint; the answered and quiet tiles keep their strength (desktop ask_card.rs).
+  const [ring, fill, ink] = tone === 'ask' ? [0.14, 0.09, 0.8] : [0.22, 0.15, 1];
   return (
-    <View style={[styles.tile, { backgroundColor: tint(hue, 0.15), borderColor: tint(hue, 0.22) }]}>
-      <Glyph name={icon} size={15} color={hue} />
+    <View style={[styles.tile, { backgroundColor: tint(hue, fill), borderColor: tint(hue, ring) }]}>
+      <Glyph name={icon} size={15} color={ink < 1 ? tint(hue, ink) : hue} />
     </View>
   );
 }
@@ -135,7 +137,7 @@ export function AskHead({
 export function ProgressDots({ index, count }: { index: number; count: number }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
-  const hue = askColor(P.light);
+  const hue = tint(askColor(P.light), 0.8);
   return (
     <View style={styles.dots}>
       {Array.from({ length: count }, (_, dot) => (
@@ -180,7 +182,11 @@ export function AskOption({
 }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
-  const hue = answered === true ? answeredColor(P.light) : askColor(P.light);
+  // A pick waiting to be sent is a light amber tint; once sent it reads green at full strength (desktop ask_card.rs).
+  const sent = answered === true;
+  const hue = sent ? answeredColor(P.light) : askColor(P.light);
+  const [edge, wash] = sent ? [0.55, 0.08] : [0.32, 0.04];
+  const markHue = sent ? hue : tint(hue, 0.85);
   const showDetail = detail !== undefined && detail.length > 0 && detail !== label;
   return (
     <Pressable
@@ -192,15 +198,15 @@ export function AskOption({
       style={({ pressed }) => [
         styles.option,
         {
-          borderColor: picked ? tint(hue, 0.55) : P.controlBorder,
-          backgroundColor: picked ? tint(hue, 0.08) : pressed ? P.pressedFill : P.light ? P.background : P.input,
+          borderColor: picked ? tint(hue, edge) : P.controlBorder,
+          backgroundColor: picked ? tint(hue, wash) : pressed ? P.pressedFill : P.light ? P.background : P.cardRow,
         },
         !enabled && !picked && styles.dimmed,
       ]}
     >
-      <View style={[styles.mark, multiple ? styles.checkbox : styles.radio, { borderColor: picked ? hue : P.mutedInk(0.7) }, picked && multiple && { backgroundColor: hue }]}>
+      <View style={[styles.mark, multiple ? styles.checkbox : styles.radio, { borderColor: picked ? markHue : P.mutedInk(0.7) }, picked && multiple && { backgroundColor: markHue }]}>
         {picked && multiple ? <Glyph name="check" size={11} color={P.background} /> : null}
-        {picked && !multiple ? <View style={[styles.radioDot, { backgroundColor: hue }]} /> : null}
+        {picked && !multiple ? <View style={[styles.radioDot, { backgroundColor: markHue }]} /> : null}
       </View>
       <View style={styles.optionBody}>
         <View style={styles.optionLine}>

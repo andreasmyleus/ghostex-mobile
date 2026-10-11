@@ -185,7 +185,7 @@ const useStyles = themedStyles((P) => ({
     borderRadius: 9,
     borderWidth: 1,
     borderColor: P.inputBorder,
-    backgroundColor: P.light ? P.background : P.input,
+    backgroundColor: P.light ? P.background : P.cardRow,
   },
   answerInput: {
     flex: 1,

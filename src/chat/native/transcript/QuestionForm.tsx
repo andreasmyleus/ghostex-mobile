@@ -194,7 +194,7 @@ function FormQuestion({
           }}
           style={[
             styles.input,
-            { color: theme.foreground, borderColor: theme.inputBorder, backgroundColor: theme.light ? theme.background : theme.input },
+            { color: theme.foreground, borderColor: theme.inputBorder, backgroundColor: theme.light ? theme.background : theme.cardRow },
             isText && styles.textAnswer,
           ]}
         />

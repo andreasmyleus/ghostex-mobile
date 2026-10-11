@@ -50,8 +50,16 @@ export type TranscriptTheme = {
   /** Hairlines of choice rows and card buttons (`control_border`), and of inputs (`input_border`). */
   controlBorder: string;
   inputBorder: string;
-  /** The status card's panel and its footer band (`card_panel`, `card_footer`). */
+  /**
+   * The status card's panel and its footer band (`card_panel`, `card_footer`), and the rows inside a
+   * card such as a question's options and note box (`card_row`).
+   *
+   * CDXC:Theming 2026-10-11 DECISION:
+   * User: every chat card is as dark as the page question cards ("yellow + dark all"). Dark mode lifts the panel 3.5%, the rows 1.5% and the footer 2.5% toward white off the background (#161616 / #121212 / #141414 over #0e0e0e), replacing 7% / 3% / 3.3%; light mode is unchanged and its rows keep the input tone.
+   * SEE-ALSO: apps/desktop/src/app/native_chat/appearance.rs (the same rule), server/src/visual_pages/kit.rs (the page question cards).
+   */
   cardPanel: string;
+  cardRow: string;
   cardFooter: string;
   /** A focused field's edge, and the glow around it (`border-ring`, ring at 20%). */
   ring: string;
@@ -141,8 +149,9 @@ const DARK: TranscriptTheme = {
   searchMatchActive: 'rgba(249,115,22,0.6)',
   controlBorder: 'rgba(255,255,255,0.06)',
   inputBorder: 'rgba(255,255,255,0.08)',
-  cardPanel: '#1f1f1f',
-  cardFooter: '#161616',
+  cardPanel: '#161616',
+  cardRow: '#121212',
+  cardFooter: '#141414',
   ring: '#737373',
   ringGlow: 'rgba(115,115,115,0.20)',
   accent: '#86d3f8',
@@ -208,6 +217,7 @@ const LIGHT: TranscriptTheme = {
   controlBorder: '#e5e5e5',
   inputBorder: '#e5e5e5',
   cardPanel: '#fefefe',
+  cardRow: '#f5f5f5',
   cardFooter: '#fdfdfd',
   ring: '#9f9fa9',
   ringGlow: 'rgba(159,159,169,0.20)',

@@ -9,7 +9,7 @@
  * packages/gx-chat-core/src/transcript/question_forms.rs. Change them together.
  */
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { Json } from '../../rust/document';
@@ -137,6 +137,16 @@ function FormQuestion({
   const choices = arr(question?.choices);
   const written = str(draft, 'other');
   const pick = (choice: number) => dispatch({ type: 'formChoice', form: formId, question: index, choice });
+  // The saved draft is read as the form appears, so its text can land after the box was made: it
+  // fills the box once (a remount with the saved text), never over what the reader typed.
+  const settled = useRef(written.length > 0);
+  const [filled, setFilled] = useState(0);
+  useEffect(() => {
+    if (!settled.current && written.length > 0) {
+      settled.current = true;
+      setFilled((count) => count + 1);
+    }
+  }, [written]);
   return (
     <View style={styles.question}>
       <View style={styles.questionHead}>
@@ -178,11 +188,15 @@ function FormQuestion({
       ) : null}
       {enabled ? (
         <TextInput
+          key={filled}
           multiline
           defaultValue={written}
           placeholder={placeholder(question, draft)}
           placeholderTextColor={theme.muted}
-          onChangeText={(text) => dispatch({ type: 'formText', form: formId, question: index, text })}
+          onChangeText={(text) => {
+            settled.current = true;
+            dispatch({ type: 'formText', form: formId, question: index, text });
+          }}
           style={[
             styles.input,
             { color: theme.foreground, borderColor: theme.border, backgroundColor: theme.light ? theme.background : 'transparent' },

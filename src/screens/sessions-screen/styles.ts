@@ -8,7 +8,7 @@ import { ds, PROJECT_RAIL_WIDTH, SIDEBAR_BACKGROUND } from '../../components/ses
 import { GhostexPalette, GhostexRadii, GhostexStrokeWidth, SidebarPalette } from '../../theme/palette';
 
 /** The track's padding around the tile and chips. */
-const SPACE_TRACK_PADDING = 3;
+const SPACE_TRACK_PADDING = 6;
 /** A Space chip's height (SpaceTabs `SPACE_CHIP_HEIGHT`) plus the track's padding and hairline. */
 const SPACE_TRACK_HEIGHT = 30 + 2 * (SPACE_TRACK_PADDING + GhostexStrokeWidth);
 
@@ -98,18 +98,18 @@ export const styles = StyleSheet.create({
     marginTop: 12,
   },
   /**
-   * The rounded track behind the workspace tile and the Space row, hugging them from the left and
-   * scrolling inside itself once the chips outgrow the line; fixed height so the list cannot
-   * squeeze it.
+   * The rounded track behind the workspace tile and the Space row: the page's full width, the tile
+   * and chips left-aligned inside it and scrolling once they outgrow the line; fixed height so the
+   * list cannot squeeze it.
    *
    * CDXC:Spaces 2026-10-11 SEE-ALSO:
-   * The desktop's Space row became a left-aligned rounded track (user decision on `space_track_fill`
-   * in apps/desktop/src/app/native_sidebar/selectors.rs); the phone follows.
+   * The desktop's Space row became a full-width rounded track holding borderless, filled buttons
+   * (user decision on `space_track_fill` in apps/desktop/src/app/native_sidebar/selectors.rs); the
+   * phone follows, so the chips and the workspace tile have no outline either.
    */
   spaceTrack: {
     marginTop: 6,
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
+    alignSelf: 'stretch',
     height: SPACE_TRACK_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',

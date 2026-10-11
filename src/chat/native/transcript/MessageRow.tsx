@@ -31,7 +31,16 @@ export const MessageRow = memo(function MessageRow({ message }: { message: Proje
   const { theme } = useTranscriptEnv();
   if (message.pending === true) return <PendingRow user={message.role === 'user'} />;
   if (message.role === 'user' && obj(message.interAgentMessage) !== null) return <InterAgentCard message={message} />;
-  if (message.role === 'user' && obj(message.pageAnswers) !== null) return <PageAnswersCard message={message} />;
+  if (message.role === 'user' && obj(message.pageAnswers) !== null) {
+    if (obj(message.pageAnswers)?.withText !== true) return <PageAnswersCard message={message} />;
+    // The user's own words besides the answers follow as their ordinary message (desktop transcript.rs).
+    return (
+      <View style={styles.answersWithText}>
+        <PageAnswersCard message={message} />
+        <UserMessage message={message} />
+      </View>
+    );
+  }
   if (obj(message.terminalTool) !== null) return <TerminalToolRow activity={message.terminalTool} />;
   if (message.shellCommand === true) return <ShellCommandCard message={message} />;
   if (message.role === 'user' && obj(message.suppressed) === null) return <UserMessage message={message} />;
@@ -250,6 +259,7 @@ function PendingRow({ user }: { user: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  answersWithText: { gap: 8 },
   message: { gap: 8, minWidth: 0 },
   userColumn: { alignItems: 'flex-end', gap: 4 },
   bubbleRow: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end', gap: 6 },

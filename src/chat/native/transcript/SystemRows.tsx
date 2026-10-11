@@ -223,19 +223,13 @@ function StatusRows({ suppressed }: { suppressed: JsonRecord }) {
   return (
     <View style={styles.statusColumn}>
       {statuses.map((status, index) => (
-        <StatusPill
-          key={index}
-          label={str(status, 'label')}
-          detail={str(status, 'detail')}
-          duration={str(status, 'duration')}
-          tone={str(status, 'tone')}
-        />
+        <StatusPill key={index} label={str(status, 'label')} detail={str(status, 'detail')} tone={str(status, 'tone')} />
       ))}
     </View>
   );
 }
 
-function StatusPill({ label, detail, duration, tone }: { label: string; detail: string; duration: string; tone: string }) {
+function StatusPill({ label, detail, tone }: { label: string; detail: string; tone: string }) {
   const { theme } = useTranscriptEnv();
   const spec = TONES[tone] ?? TONES.ok!;
   const color = spec.color ?? theme.cardMuted;
@@ -251,8 +245,6 @@ function StatusPill({ label, detail, duration, tone }: { label: string; detail: 
             <Text style={[styles.statusDetailText, { color: theme.muted }]}>{detail}</Text>
           </View>
         ) : null}
-        {/* How long a background task ran ("after 3m 12s"), as quiet trailing words (`status_rows.rs`). */}
-        {duration.length > 0 ? <Text style={[styles.statusDuration, { color: theme.muted }]}>{duration}</Text> : null}
       </View>
     </View>
   );
@@ -387,7 +379,6 @@ const styles = StyleSheet.create({
   statusLabel: { fontSize: 12, lineHeight: 16, fontWeight: '500' },
   statusDetail: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 6 },
   statusDetailText: { fontFamily: MONO_FONT, fontSize: 11 },
-  statusDuration: { fontSize: 12, lineHeight: 16, opacity: 0.8 },
   lane: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingBottom: 13 },
   laneText: { flex: 1 },
   collapsed: { gap: 6, paddingBottom: 8 },

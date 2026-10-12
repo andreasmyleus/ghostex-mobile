@@ -68,6 +68,8 @@ type SectionProps = {
   all: ReactNode;
   /** The lines after the first (styles C and D). */
   rest: ReactNode;
+  /** The label, as inline text: a marked heading's label is the whole heading, links and code spans included (styles C and D). */
+  label: ReactNode;
   /** The rest of the first line, as inline text (styles C and D). */
   lead: ReactNode;
   /** The first line without its emoji, drawn as written (the thin rule with emojis off). */
@@ -75,7 +77,7 @@ type SectionProps = {
   selectable: boolean;
 };
 
-export function MarkedSection({ meta, style, emoji, theme, color, all, rest, lead, first, selectable }: SectionProps) {
+export function MarkedSection({ meta, style, emoji, theme, color, all, rest, label: labelText, lead, first, selectable }: SectionProps) {
   if (style === 'plain') return <View>{all}</View>;
   const accent = kindColor(meta.kind, theme.light);
   if (style === 'rule') {
@@ -108,7 +110,7 @@ export function MarkedSection({ meta, style, emoji, theme, color, all, rest, lea
           </View>
           {label.length > 0 || hasLead ? (
             <Text selectable={selectable} style={[styles.prose, styles.badgeLead, { color }]}>
-              {label.length > 0 ? <Text style={[styles.label, { color: theme.foreground }]}>{label}</Text> : null}
+              {label.length > 0 ? <Text style={[styles.label, { color: theme.foreground }]}>{labelText}</Text> : null}
               {label.length > 0 && hasLead ? ' ' : null}
               {hasLead ? lead : null}
             </Text>
@@ -120,13 +122,14 @@ export function MarkedSection({ meta, style, emoji, theme, color, all, rest, lea
   }
   // Coloured labels: the line reads as written, with its label in the kind's colour; without the
   // emoji, a section with no label of its own shows the kind's name so the line keeps its colour.
-  const label = meta.label.length > 0 ? meta.label : emoji ? '' : `${meta.name}:`;
+  const label = meta.label.length > 0 ? labelText : emoji ? null : `${meta.name}:`;
+  const hasLabel = meta.label.length > 0 || !emoji;
   return (
     <View>
       <Text selectable={selectable} style={[styles.prose, { color }]}>
         {emoji ? `${meta.emoji} ` : null}
-        {label.length > 0 ? <Text style={[styles.label, { color: accent }]}>{label}</Text> : null}
-        {label.length > 0 && hasLead ? ' ' : null}
+        {hasLabel ? <Text style={[styles.label, { color: accent }]}>{label}</Text> : null}
+        {hasLabel && hasLead ? ' ' : null}
         {hasLead ? lead : null}
       </Text>
       {rest}

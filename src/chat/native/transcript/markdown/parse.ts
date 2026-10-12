@@ -68,7 +68,7 @@ export type Block =
    * the first and `lead` the rest of the first line, for the styles that draw their own first line;
    * `first` is the first line without its marker emoji, for the thin rule with emojis off.
    */
-  | { t: 'section'; meta: SectionMeta; all: Block[]; rest: Block[]; lead: Inline[]; first: Block[] }
+  | { t: 'section'; meta: SectionMeta; all: Block[]; rest: Block[]; label: Inline[]; lead: Inline[]; first: Block[] }
   | { t: 'hr' };
 
 export type ParseOptions = {
@@ -227,7 +227,7 @@ class BlockParser {
         const meta = parseJson<SectionMeta | null>(line.slice(SECTION_OPEN.length), null);
         const body = lines.slice(index + 1, end);
         if (meta !== null) {
-          out.push({ t: 'section', meta, all: this.blocks(body), rest: this.blocks(body.slice(1)), lead: this.inline(meta.lead), first: this.blocks([meta.plain ?? body[0] ?? '']) });
+          out.push({ t: 'section', meta, all: this.blocks(body), rest: this.blocks(body.slice(1)), label: this.inline(meta.label), lead: this.inline(meta.lead), first: this.blocks([meta.plain ?? body[0] ?? '']) });
         } else {
           out.push(...this.blocks(body));
         }

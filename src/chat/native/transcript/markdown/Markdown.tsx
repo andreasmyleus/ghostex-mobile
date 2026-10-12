@@ -525,6 +525,7 @@ function Blocks({ blocks, context, color, depth, listDepth }: BlockProps) {
                       </View>
                     ) : null
                   }
+                  label={renderInlines(block.label, context, `${key}.label`)}
                   lead={renderInlines(block.lead, context, `${key}.lead`)}
                   first={<Blocks blocks={block.first} context={context} color={color} depth={depth + 1} listDepth={listDepth} />}
                 />

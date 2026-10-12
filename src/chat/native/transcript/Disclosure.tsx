@@ -97,21 +97,12 @@ export function DisclosureBody({
   // The line is centred under the chevron or glyph that opens the body, at every depth
   // (`SLOT_CENTRE` in desktop's `disclosure_body.rs`); the content keeps its own column.
   const contentX = rail === 'marker' ? 17 : rail === 'work' ? 23 : 29.5;
-  const hairline = rail === 'work';
   return (
     <View style={[styles.body, { marginLeft: SLOT_CENTRE - RAIL_BOX / 2, gap: contentX - SLOT_CENTRE - RAIL_BOX / 2 }]}>
       <Pressable onPress={onCollapse} accessibilityRole='button' accessibilityLabel={label} style={styles.railBox}>
         {({ pressed }) => (
           <View
-            style={[
-              styles.rail,
-              hairline && styles.hairline,
-              pressed
-                ? { backgroundColor: theme.foreground, opacity: 1 }
-                : hairline
-                  ? { backgroundColor: theme.ink(0.1) }
-                  : { backgroundColor: theme.muted, opacity: 0.42 },
-            ]}
+            style={[styles.rail, { backgroundColor: pressed ? theme.foreground : theme.ink(RAIL_LINE_OPACITY) }]}
           />
         )}
       </Pressable>
@@ -122,6 +113,13 @@ export function DisclosureBody({
 
 const SLOT_CENTRE = MARKER_INSET + MARKER_SLOT / 2;
 const RAIL_BOX = 14;
+/**
+ * CDXC:SessionChat 2026-10-12 DECISION: the user pointed at the thin, subtle line down an opened
+ * "Worked" fold and the thicker, brighter line beside a tool group's rows and said "make the line
+ * in B look like the one at A". Every rail (the fold's, a tool group's, one tool's detail) is that
+ * hairline at this share of the foreground; desktop's `disclosure_body.rs` matches it.
+ */
+const RAIL_LINE_OPACITY = 0.1;
 
 const styles = StyleSheet.create({
   markerSlot: {
@@ -139,7 +137,6 @@ const styles = StyleSheet.create({
   medium: { fontWeight: '500' },
   body: { flexDirection: 'row', minWidth: 0 },
   railBox: { width: RAIL_BOX, alignItems: 'center', flexShrink: 0 },
-  rail: { width: 2, flex: 1, borderRadius: 1 },
-  hairline: { width: 1, borderRadius: 0.5 },
+  rail: { width: 1, flex: 1, borderRadius: 0.5 },
   bodyColumn: { flex: 1, minWidth: 0 },
 });

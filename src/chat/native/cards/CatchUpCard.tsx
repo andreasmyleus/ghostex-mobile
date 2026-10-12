@@ -6,14 +6,16 @@
  */
 
 import * as Clipboard from 'expo-clipboard';
-import { Pressable, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
 import type { UserAction } from '../../rust/actions';
 import type { CatchUpState, Json } from '../../rust/document';
 import { Glyph } from '../composer/icons';
 import { themedStyles, useTranscriptTheme } from '../transcript/theme';
 import { ChatButton, StatusCard } from './primitives';
-import { SideAnswer } from './SideQuestionCard';
+import { TranscriptEnvProvider, type TranscriptEnv } from '../transcript/context';
+import { Markdown } from '../transcript/markdown/Markdown';
 
 export function CatchUpCard({ catchUp, dispatch }: { catchUp: CatchUpState | undefined; dispatch: (action: UserAction) => void }) {
   const styles = useStyles();
@@ -35,7 +37,7 @@ export function CatchUpCard({ catchUp, dispatch }: { catchUp: CatchUpState | und
           </Text>,
         ]
       : [
-          <SideAnswer key="summary" dispatch={dispatch} markdown={catchUp.markdown} references={catchUp.references as Json} />,
+          <Summary key="summary" dispatch={dispatch} markdown={catchUp.markdown} references={catchUp.references as Json} />,
           catchUp.caption ? (
             <Text key="caption" style={styles.caption}>
               {catchUp.caption}
@@ -79,6 +81,26 @@ export function CatchUpButton({ catchUp, dispatch }: { catchUp: CatchUpState | u
         <Text style={[styles.buttonLabel, { color }]}>{catchUp.loading ? 'Catching up…' : 'Catch me up'}</Text>
       </Pressable>
     </View>
+  );
+}
+
+/**
+ * The whole catch-up at once (no "Show all" cap: it is short and read in one go); a tall one
+ * scrolls inside the card so the transcript stays in view.
+ */
+function Summary({ dispatch, markdown, references }: { dispatch: (action: UserAction) => void; markdown: string; references?: Json }) {
+  const theme = useTranscriptTheme();
+  const { height } = useWindowDimensions();
+  const env = useMemo<TranscriptEnv>(
+    () => ({ dispatch, theme, verbose: false, simple: false, filePreviews: false, main: false }),
+    [dispatch, theme]
+  );
+  return (
+    <TranscriptEnvProvider value={env}>
+      <ScrollView style={{ maxHeight: height * 0.45 }} nestedScrollEnabled>
+        <Markdown text={markdown} references={references} color={theme.prose} />
+      </ScrollView>
+    </TranscriptEnvProvider>
   );
 }
 

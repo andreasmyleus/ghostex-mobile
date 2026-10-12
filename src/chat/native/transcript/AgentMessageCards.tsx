@@ -1,8 +1,8 @@
 /**
  * The cards for messages between agents (desktop `inter_agent_message.rs`): one another agent sent
  * this session, one this session's agent sent another, and a subagent's reply. Each is one 40px row
- * (the agent's logo, its name, one line of text that reads the same collapsed and opened, the time,
- * the status and a chevron) that opens to the whole message. Everything a card says is the core's
+ * (the agent's logo, one sentence such as `Message from "<session>"` that reads the same collapsed and
+ * opened, the time, the status and a chevron) that opens to the whole message. Everything a card says is the core's
  * `card` object (`agent_message_card.rs`; the user's pick is the `CDXC:SessionChat 2026-10-12 DECISION` there);
  * this file only lays it out. The phone has no hover, so Go to session sits in the opened message;
  * a message sent to several sessions lists each of them there instead, each name opening its session.
@@ -80,7 +80,6 @@ const AgentCard = memo(function AgentCard({
   const failure = str(card, 'failure');
   const retry = typeof card.retryPromptId === 'string' ? card.retryPromptId : null;
   const session = obj(card.session);
-  const line = str(card, 'line');
   const time = str(card, 'time');
   const hairline = theme.ink(theme.light ? 0.08 : 0.05);
   const recipients = arr(card.recipients)
@@ -101,9 +100,6 @@ const AgentCard = memo(function AgentCard({
         <Mark card={card} />
         <Text style={[styles.name, { color: theme.foreground }]} numberOfLines={1}>
           {str(card, 'name')}
-        </Text>
-        <Text style={[styles.line, { color: open ? theme.muted : theme.cardMuted }]} numberOfLines={1}>
-          {line}
         </Text>
         {time.length > 0 ? <Text style={[styles.small, { color: theme.muted }]}>{time}</Text> : null}
         {status !== null ? <Status status={status} /> : null}
@@ -217,8 +213,7 @@ const styles = StyleSheet.create({
   column: { gap: 8, minWidth: 0 },
   card: { borderWidth: 1, borderRadius: 10, overflow: 'hidden', minWidth: 0 },
   row: { height: 40, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 9 },
-  name: { fontSize: 14, fontWeight: '600', flexShrink: 0, maxWidth: '45%' },
-  line: { flex: 1, minWidth: 0, fontSize: 14 },
+  name: { flex: 1, minWidth: 0, fontSize: 14, fontWeight: '600' },
   small: { fontSize: 12, lineHeight: 16 },
   mark: { width: 17, height: 17 },
   badge: {

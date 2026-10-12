@@ -14,7 +14,6 @@ import { useNativeChatUi, useRowDetail, useTranscriptEnv } from './context';
 import { DisclosureBody, DisclosureHeading, useFoldPlace } from './Disclosure';
 import { Glyph, toolGlyph } from './icons';
 import { arr, obj, str, type JsonRecord } from './json';
-import { ShellCommandActions } from './MessageActions';
 import { useDisclosure } from './state';
 import { openTranscriptMenu } from './transcriptMenuStore';
 import { CODE_LINE, CODE_SIZE, MONO_FONT, PROSE_LINE, PROSE_SIZE } from './theme';
@@ -102,12 +101,12 @@ export function ToolRows({ message }: { message: ProjectedMessage }) {
 /**
  * A `!` command the user ran (`shellCard`, gx-chat-core's `shell_card`), in the user's bubble
  * (desktop `shell_command_card` in `tool_run.rs`): a header with the terminal glyph, the command and
- * its failure status, opening onto the output alone; the copy button sits outside the bubble. It shows in Simple mode too, since it is
+ * its failure status, opening onto the output alone; Copy is in the long-press menu. It shows in Simple mode too, since it is
  * what the user typed. A running card opens on its output by default and folds like every
  * disclosure, from the header or the rail.
  */
 export function ShellCommandCard({ message }: { message: ProjectedMessage }) {
-  const { theme, main } = useTranscriptEnv();
+  const { theme } = useTranscriptEnv();
   const { disclosures } = useNativeChatUi();
   const card = obj(message.shellCard);
   const hasBody = card?.hasBody === true;
@@ -131,11 +130,11 @@ export function ShellCommandCard({ message }: { message: ProjectedMessage }) {
         <View style={styles.shellHeader}>
           <Pressable
             onPress={hasBody ? toggle : undefined}
-            // Holding the bubble opens the menu with Copy of the bare command (the main transcript only).
-            {...(main && fullCommand.length > 0 ? { onLongPress: () => openTranscriptMenu({ selection: fullCommand }) } : {})}
+            // Holding the bubble opens the menu with Copy of the bare command.
+            {...(fullCommand.length > 0 ? { onLongPress: () => openTranscriptMenu({ selection: fullCommand }) } : {})}
             accessibilityRole='button'
             accessibilityLabel={`Shell command: ${fullCommand}`}
-            accessibilityHint={main ? 'Long press for Copy' : undefined}
+            accessibilityHint='Long press for Copy'
             accessibilityState={{ expanded: open, disabled: !hasBody }}
             style={({ pressed }) => [styles.trigger, styles.shellTrigger, pressed && { backgroundColor: theme.pressed }]}
           >
@@ -151,8 +150,6 @@ export function ShellCommandCard({ message }: { message: ProjectedMessage }) {
           </Pressable>
         </View>
       </View>
-      {/* The main transcript has Copy in the long-press menu; a transcript without one shows the button. */}
-      <ShellCommandActions command={fullCommand} />
       {/* The output opens in a bubble of its own below the header, which keeps its collapsed size;
           the header is its toggle, so it carries no rail. */}
       {open && blocks.length > 0 ? (

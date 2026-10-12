@@ -203,6 +203,8 @@ export default function NativeChatScreen({
   }, [onQueueCountChange, queueCount, queueSupported]);
 
   const renderSubagentRow = useSubagentRowRenderer(chat);
+  // While the subagent viewer is open its modal carries the transcript menu (see `TranscriptMenuSheet`).
+  const subagentOpen = document?.subagent !== undefined && document.subagent !== null;
 
   return (
     <NativeChatUiProvider chat={chat}>
@@ -225,7 +227,7 @@ export default function NativeChatScreen({
         {questionReplacesComposer(document) ? null : <NativeComposer chat={chat} onHostAction={hostAction} hostActions={composerHostActions} openAccountsRequestId={accountsRequestId} />}
         <RewindDialog chat={chat} />
         <SaveMarkdownDialog chat={chat} />
-        {gpui ? null : <TranscriptMenuSheet chat={chat} host={menuHost} />}
+        {gpui ? null : <TranscriptMenuSheet chat={chat} host={menuHost} enabled={!subagentOpen} />}
         <SavedPromptsSheet
           visible={savedPromptsOpen}
           machine={machine}
@@ -243,7 +245,13 @@ export default function NativeChatScreen({
           onClose={() => setHandoff(null)}
           onFailure={(failure, message) => show(message, true, failure)}
         />
-        {gpui ? null : <NativeChatOverlays chat={chat} renderTranscriptItem={renderSubagentRow} />}
+        {gpui ? null : (
+          <NativeChatOverlays
+            chat={chat}
+            renderTranscriptItem={renderSubagentRow}
+            subagentMenu={<TranscriptMenuSheet chat={chat} host={menuHost} />}
+          />
+        )}
         <ChatToast toast={toast} />
       </View>
     </NativeChatUiProvider>

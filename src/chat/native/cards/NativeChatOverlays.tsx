@@ -5,7 +5,7 @@
  * cover the chat; it takes no space and no touches of its own.
  */
 
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import type { RustChat } from '../../rust/useRustChat';
@@ -19,16 +19,18 @@ export type NativeChatOverlaysProps = {
   chat: RustChat;
   /** The transcript's row renderer, so the subagent viewer's rows read like the main list. */
   renderTranscriptItem?: TranscriptItemRenderer;
+  /** The transcript menu's sheet, drawn inside the subagent viewer's modal. */
+  subagentMenu?: ReactNode;
 };
 
-export function NativeChatOverlays({ chat, renderTranscriptItem }: NativeChatOverlaysProps) {
+export function NativeChatOverlays({ chat, renderTranscriptItem, subagentMenu }: NativeChatOverlaysProps) {
   // The previews belong to the chat on screen: leaving it closes them, as desktop takes a pane's
   // previews down when the user switches to another session.
   useEffect(() => closeChatOverlays, []);
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <AccountSwitchCard chat={chat} />
-      <SubagentViewer chat={chat} renderItem={renderTranscriptItem} />
+      <SubagentViewer chat={chat} renderItem={renderTranscriptItem} menu={subagentMenu} />
       <ImageViewer chat={chat} />
       <TablePreview />
     </View>

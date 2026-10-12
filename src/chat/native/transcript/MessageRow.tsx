@@ -62,12 +62,11 @@ export const MessageRow = memo(function MessageRow({ message }: { message: Proje
 /**
  * The long press that opens the transcript menu on a message (desktop's right press), with the
  * message's own text as the selection and its own actions (`actions`) under Copy and Add to Chat.
- * Only the main transcript has the menu (`TranscriptMenu.tsx`).
+ * The main transcript and the subagent viewer share the menu (`TranscriptMenu.tsx`).
  */
 function useMessageMenu(message: ProjectedMessage, actions: MessageMenuAction[] = []): (() => void) | undefined {
-  const { main } = useTranscriptEnv();
   const selection = typeof message.copyText === 'string' ? message.copyText : '';
-  return main && selection.trim().length > 0 ? () => openTranscriptMenu({ selection, actions }) : undefined;
+  return selection.trim().length > 0 ? () => openTranscriptMenu({ selection, actions }) : undefined;
 }
 
 const MENU_HINT = 'Long press for Copy, Add to Chat and the message actions';

@@ -10,7 +10,8 @@
  * long press on a link opens the link's rows alone, as a right press on a link with nothing
  * selected does on desktop. The prose those rows cover is not natively selectable: a selectable
  * text view claims the same long press for its own selection menu on both platforms, which
- * raced the sheet. The subagent viewer opens no menu, as on desktop.
+ * raced the sheet. The subagent viewer opens the same menu (user decision 2026-10-12), nested in
+ * its own modal.
  */
 
 import { useCallback, useEffect, useMemo } from 'react';
@@ -34,13 +35,18 @@ function questionActive(document: ChatDocument | null): boolean {
   return document?.questionCard?.visible === true && str(document.prompt, 'kind') === 'question';
 }
 
-export function TranscriptMenuSheet({ chat, host }: { chat: RustChat; host: TranscriptMenuHost }) {
+/**
+ * `enabled` is false for the copy the chat screen mounts while the subagent viewer is open: the
+ * viewer's modal carries its own copy, since a modal presented from under another one does not show
+ * on iOS.
+ */
+export function TranscriptMenuSheet({ chat, host, enabled = true }: { chat: RustChat; host: TranscriptMenuHost; enabled?: boolean }) {
   const request = useTranscriptMenuStore((state) => state.request);
   const document = chat.state?.document ?? null;
   const active = questionActive(document);
   const { query } = chat;
   const rows = useMemo<MenuRow[] | null>(() => {
-    if (request === null) return null;
+    if (request === null || !enabled) return null;
     const answer = arr(query('transcriptMenu', [{ href: request.href, selection: request.selection, questionActive: active }]));
     const served = answer
       .map((row) => obj(row))
@@ -57,7 +63,7 @@ export function TranscriptMenuSheet({ chat, host }: { chat: RustChat; host: Tran
     }));
     const all = own.length > 0 ? [...served, ...(served.length > 0 ? [{ separator: true }] : []), ...own] : served;
     return all.length > 0 ? all : null;
-  }, [active, host, query, request]);
+  }, [active, enabled, host, query, request]);
   // The menu belongs to the chat on screen; leaving it drops a request still pending.
   useEffect(() => closeTranscriptMenu, []);
   const composerText = chat.state?.composer.text ?? '';

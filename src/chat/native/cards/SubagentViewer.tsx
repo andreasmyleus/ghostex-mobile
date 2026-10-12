@@ -22,7 +22,16 @@ import { ChatButton } from './primitives';
 
 export type TranscriptItemRenderer = (item: TranscriptItem, index: number) => ReactNode;
 
-export function SubagentViewer({ chat, renderItem }: { chat: RustChat; renderItem?: TranscriptItemRenderer }) {
+export function SubagentViewer({
+  chat,
+  renderItem,
+  menu,
+}: {
+  chat: RustChat;
+  renderItem?: TranscriptItemRenderer;
+  /** The transcript menu's sheet, mounted inside this modal so it shows over it. */
+  menu?: ReactNode;
+}) {
   const styles = useStyles();
   const P = useTranscriptTheme();
   const insets = useSafeAreaInsets();
@@ -87,6 +96,7 @@ export function SubagentViewer({ chat, renderItem }: { chat: RustChat; renderIte
           ) : null}
         </View>
       </View>
+      {menu}
     </Modal>
   );
 }

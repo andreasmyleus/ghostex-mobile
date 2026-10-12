@@ -29,7 +29,7 @@ type InlineContext = {
   theme: TranscriptTheme;
   references: Map<string, Reference>;
   openLink(href: string): void;
-  /** A long press on a link: the transcript menu's reference rows (main transcript only). */
+  /** A long press on a link: the transcript menu's reference rows. */
   longPressLink: ((href: string) => void) | undefined;
   /** Whether prose and code take the platform's own text selection (see `TranscriptMenu.tsx`). */
   selectable: boolean;
@@ -607,7 +607,7 @@ export type MarkdownProps = {
 };
 
 export const Markdown = memo(function Markdown({ text, references, color, breaks = false, selectable = true }: MarkdownProps) {
-  const { theme, dispatch, main } = useTranscriptEnv();
+  const { theme, dispatch } = useTranscriptEnv();
   const find = useRowFind();
   const blocks = useMemo(() => parseMarkdown(text, { breaks }), [breaks, text]);
   const referencesMap = useMemo(() => referenceMap(references), [references]);
@@ -620,11 +620,11 @@ export const Markdown = memo(function Markdown({ text, references, color, breaks
       theme,
       references: referencesMap,
       openLink,
-      longPressLink: main ? (href: string) => openTranscriptMenu({ href }) : undefined,
+      longPressLink: (href: string) => openTranscriptMenu({ href }),
       selectable,
       find,
     }),
-    [find, main, openLink, referencesMap, selectable, theme]
+    [find, openLink, referencesMap, selectable, theme]
   );
   return (
     <View style={styles.root}>

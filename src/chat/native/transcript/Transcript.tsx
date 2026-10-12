@@ -195,6 +195,25 @@ export function NativeTranscript({ chat, items, main = true }: NativeTranscriptP
     }
   }, [activeItem, rows.length, searchOpen, searchRevision]);
 
+  // Files and links: a row's jump scrolls to the message (or the turn holding it) once per click
+  // (`composer/files_links.rs`); the core bumps `revision` each time.
+  const filesJump = main ? (document?.filesLinks?.jump ?? null) : null;
+  const filesJumpItem = filesJump?.item ?? null;
+  const filesJumpRevision = filesJump?.revision ?? null;
+  const filesJumped = useRef<number | null>(null);
+  useEffect(() => {
+    if (filesJumpRevision === null || filesJumpItem === null) {
+      filesJumped.current = null;
+      return;
+    }
+    if (filesJumpRevision === filesJumped.current) return;
+    filesJumped.current = filesJumpRevision;
+    const position = rows.length - 1 - filesJumpItem;
+    if (position >= 0 && position < rows.length) {
+      listRef.current?.scrollToIndex({ index: position, viewPosition: 0.5, animated: true });
+    }
+  }, [filesJumpItem, filesJumpRevision, rows.length]);
+
   const interruptToast = main ? (document?.interruptToast ?? null) : null;
   const errorTone = theme.light ? SCROLL_BOTTOM.errorTone.light : SCROLL_BOTTOM.errorTone.dark;
   const hasMore = main && document?.hasMore === true;

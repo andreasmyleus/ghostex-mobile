@@ -13,6 +13,7 @@ import { rowsOf, type MenuRow } from './MenuSheet';
 export const COMPOSER_CONTROLS = [
   { id: 'summary', action: 'summaryMode', label: 'Summary mode', icon: 'titlebar/list-details.svg' },
   { id: 'note', action: 'sessionNote', label: 'Session note', icon: 'titlebar/note.svg' },
+  { id: 'files', action: 'filesLinks', label: 'Files and links', icon: 'titlebar/link.svg' },
   { id: 'stash', action: 'stashPrompt', label: 'Stash prompt', icon: 'titlebar/stack-push.svg' },
   { id: 'attach', action: 'attachPath', label: 'Attach a file or folder', icon: 'titlebar/paperclip.svg' },
   { id: 'dictate', action: 'dictate', label: 'Dictate', icon: 'titlebar/microphone.svg' },
@@ -187,6 +188,7 @@ export function moreActionsRows({ document, simple, verbose, available, serves, 
     if (control.id === 'summary' || !overflowed(document, control.id) || !available(control.id)) continue;
     const row: MenuRow = { label: control.label, iconPath: control.icon, command: { type: 'composerHost', action: control.action } };
     if (control.id === 'note') row.checked = document.note.open;
+    if (control.id === 'files') row.checked = document.filesLinks?.open === true;
     rows.push(row);
   }
   const agentRows: MenuRow[] = [];

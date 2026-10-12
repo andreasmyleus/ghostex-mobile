@@ -198,6 +198,14 @@ export type ActionFields = {
   catchUp: {};
   catchUpRefresh: {};
   catchUpClose: {};
+  /** Files and links: the toolbar button (opens and reads, or closes), Refresh, Close, the filter, a section's
+   * "Show all", and a row's jump to the message that mentioned it. */
+  filesLinks: {};
+  filesLinksRefresh: {};
+  filesLinksClose: {};
+  filesLinksFilter: { text: string };
+  filesLinksShowAll: { section: string };
+  filesLinksJump: { messageId: string; timestamp?: number | null; projectId?: string; sessionId?: string };
   markdownSaveOpen: { markdown: string };
   markdownSaveFolder: { [field: string]: unknown };
   markdownSaveName: { [field: string]: unknown };

@@ -34,6 +34,7 @@ import { MenuSheet, type MenuRow } from './MenuSheet';
 import { ModelMenuSheet } from './ModelMenuSheet';
 import { NotePanel } from './NotePanel';
 import { CatchUpButton, CatchUpCard } from '../cards/CatchUpCard';
+import { FilesLinksCard } from '../cards/FilesLinksCard';
 import { OptionPills, type PillKind } from './OptionPills';
 import { RunLocationRow } from './RunLocationRow';
 import { themedStyles, useTranscriptTheme } from '../transcript/theme';
@@ -96,6 +97,7 @@ function terminalReadinessTint(document: ChatDocument): string | null {
 const CONTROL_GLYPHS: Record<ComposerControlId, GlyphName> = {
   summary: 'list-details',
   note: 'note',
+  files: 'link',
   stash: 'stack-push',
   attach: 'paperclip',
   dictate: 'microphone',
@@ -230,6 +232,9 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
           return;
         case 'sessionNote':
           dispatch({ type: 'toggleNote' });
+          return;
+        case 'filesLinks':
+          dispatch({ type: 'filesLinks' });
           return;
         case 'attachPath':
           openAttach();
@@ -407,6 +412,7 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
       {/* A refused operation's error line is the card band's (`ComposerNotReadyCard`), where desktop draws it; drawing it here too showed it twice. */}
       {document !== null ? <NotePanel note={document.note} dispatch={dispatch} /> : null}
       {document !== null ? <CatchUpCard catchUp={document.catchUp} dispatch={dispatch} /> : null}
+      {document !== null ? <FilesLinksCard filesLinks={document.filesLinks} dispatch={dispatch} /> : null}
       {document?.suggestions ? <Suggestions data={document.suggestions} dispatch={dispatch} /> : null}
       {document?.runLocation ? <RunLocationRow row={document.runLocation} dispatch={dispatch} /> : null}
       <Animated.View style={[styles.card, focused ? styles.cardFocused : null, motion.cardStyle]}>
@@ -490,6 +496,7 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
                       const pressed =
                         (control.id === 'summary' && document.composerChrome.summaryPressed) ||
                         (control.id === 'note' && document.composerChrome.notePressed) ||
+                        (control.id === 'files' && document.filesLinks?.open === true) ||
                         (control.id === 'dictate' && dictation.listening);
                       const badge =
                         control.id === 'stash'

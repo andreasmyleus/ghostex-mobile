@@ -415,6 +415,7 @@ export type ChatDocument = {
   note: NoteState;
   /** The Catch me up button and card (`composer/catch_up.rs`). Desktop: `catch_up.rs`. */
   catchUp?: CatchUpState;
+  filesLinks?: FilesLinksState;
   /** Timings both renderers share. Desktop: `send_control.rs`. */
   interaction: Interaction;
   /** The toast drawn in the Scroll to bottom pill's place: `notice` while a first Escape waits,
@@ -614,6 +615,8 @@ export type ComposerActions = {
   stash: boolean;
   attach: boolean;
   terminal: boolean;
+  /** Files and links: the session has a conversation to list. Absent from an older core. */
+  files?: boolean;
 };
 
 export type ComposerChrome = {
@@ -638,6 +641,40 @@ export type CatchUpState = {
   copyText: string;
   error: string | null;
   caption: string | null;
+};
+
+/** One Files and links row (core `composer/files_links.rs`). `icon` is photo, file, folder or link; `open` is the
+ * action a tap runs, unless `image` is a picture the viewer can show; `jumps` are `{label, tooltip, command}`. */
+export type FilesLinksRow = {
+  key: string;
+  label: string;
+  detail: string;
+  icon: string;
+  tag: string | null;
+  meta: string;
+  open: Json;
+  image: Json | null;
+  jumps: { label: string; tooltip: string; command: Json }[];
+};
+
+export type FilesLinksGroup = { key: string; title: string; rows: FilesLinksRow[] };
+
+export type FilesLinksSection = { id: string; label: string; count: number; groups: FilesLinksGroup[]; moreLabel: string };
+
+/** The Files and links card: every attachment, file and link the session (and a coordinator's threads) mentioned. */
+export type FilesLinksState = {
+  enabled: boolean;
+  open: boolean;
+  loading: boolean;
+  error: string | null;
+  query: string;
+  /** The list is long enough for the filter box. */
+  filter: boolean;
+  sections: FilesLinksSection[];
+  caption: string;
+  emptyLabel: string;
+  /** Where the transcript scrolls, once per `revision`. */
+  jump: { item: number; revision: number } | null;
 };
 
 export type Interaction = { queueLongPressMs: number; stopButtonCooldownMs: number };

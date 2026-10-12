@@ -3,7 +3,7 @@
  * (`QuestionCard.tsx`) and its answered record (`QuestionExchangeCards.tsx`), a ```questions form
  * (`transcript/QuestionForm.tsx`) and the answers sent from a form or an HTML page
  * (`transcript/PageAnswersCard.tsx`). A tinted tile and a two-line title lead it, the options are
- * radio or checkbox rows that light up in the asking colour, and the answers come back as green chips.
+ * radio or checkbox rows that light up in the asking colour, and the answers come back as plain text under their question.
  *
  * CDXC:SessionChat 2026-10-11 SEE-ALSO:
  * The desktop's copy is apps/desktop/src/app/native_chat/ask_card.rs; the HTML question pages draw it in server/src/visual_pages/kit.rs. Change them together.
@@ -238,32 +238,25 @@ export function PrimaryButton({ label, onPress, disabled }: { label: string; onP
   );
 }
 
-/** An answer as a green chip with its check. */
-export function AnswerChip({ label }: { label: string }) {
+/** An answer as plain text: the foreground colour at medium weight, no chip, border or fill (desktop `plain_answer`). */
+export function PlainAnswer({ children }: { children: string }) {
   const styles = useStyles();
-  const P = useTranscriptTheme();
-  const good = answeredColor(P.light);
   return (
-    <View style={[styles.chip, { backgroundColor: tint(good, 0.1), borderColor: tint(good, 0.28) }]}>
-      <View style={styles.chipCheck}>
-        <Glyph name="check" size={12} color={good} />
-      </View>
-      <Text selectable style={styles.chipLabel}>
-        {label}
-      </Text>
-    </View>
+    <Text selectable style={styles.plainAnswer}>
+      {children}
+    </Text>
   );
 }
 
-/** The muted words beside or under an answer chip. */
+/** The muted words beside or under an answer. */
 export function AnswerAside({ children, italic }: { children: string; italic?: boolean }) {
   const styles = useStyles();
   return <Text style={[styles.aside, italic === true && styles.italic]}>{children}</Text>;
 }
 
 /**
- * One answered question in a receipt: its number, the question (muted), and under it the answer
- * chips and whatever follows them.
+ * One answered question in a receipt: its number, the question (muted), and under it the plain
+ * answer and whatever follows it.
  */
 export function ReceiptRow({
   number,
@@ -455,21 +448,7 @@ const useStyles = themedStyles((P) => ({
   disabled: {
     opacity: 0.5,
   },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-    maxWidth: '100%',
-    paddingLeft: 8,
-    paddingRight: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  chipCheck: {
-    paddingTop: 4,
-  },
-  chipLabel: {
+  plainAnswer: {
     flexShrink: 1,
     color: P.foreground,
     fontSize: 14,

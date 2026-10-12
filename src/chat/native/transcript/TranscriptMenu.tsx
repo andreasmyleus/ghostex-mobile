@@ -48,13 +48,26 @@ export function TranscriptMenuSheet({ chat, host }: { chat: RustChat; host: Tran
         const command = obj(row?.command);
         return command !== null && (str(command, 'type') === 'appendToDraft' || host.serves(command));
       });
-    return served.length > 0 ? served : null;
+    // The message's own actions follow Copy and Add to Chat: the phone shows none of them until
+    // the message is held (desktop shows them on hover).
+    const own = request.actions.map((action, index) => ({
+      label: action.label,
+      iconPath: `titlebar/${action.icon}.svg`,
+      command: { type: 'messageAction', index },
+    }));
+    const all = own.length > 0 ? [...served, ...(served.length > 0 ? [{ separator: true }] : []), ...own] : served;
+    return all.length > 0 ? all : null;
   }, [active, host, query, request]);
   // The menu belongs to the chat on screen; leaving it drops a request still pending.
   useEffect(() => closeTranscriptMenu, []);
   const composerText = chat.state?.composer.text ?? '';
   const onCommand = useCallback(
     (command: MenuRow): boolean => {
+      if (str(command, 'type') === 'messageAction') {
+        const index = typeof command.index === 'number' ? command.index : -1;
+        useTranscriptMenuStore.getState().request?.actions[index]?.run();
+        return false;
+      }
       if (str(command, 'type') === 'appendToDraft') {
         const text = str(command, 'text');
         if (text.length > 0) chat.dispatch({ type: 'appendToDraft', text, draft: composerText });

@@ -2,14 +2,17 @@
  * Answered question cards in the transcript: every exchange a message carries (`message.questions`)
  * or a completed turn hoisted out of its fold (`item.questions`). Port of desktop
  * `question_exchange.rs`: a green receipt ("You answered 2 questions") that folds to its head, one
- * numbered row per question with the answer as a chip, the custom answer or note, "Skipped" /
- * "Dismissed without answering", and every option behind "Show all N options".
+ * numbered row per question with the answer as plain text under it (like the answer card under a
+ * form), the option's description, the custom answer or note, "Skipped" / "Dismissed without
+ * answering", and every option behind "Show all N options".
+ *
+ * CDXC:SessionChat 2026-10-12 DECISION: The user answered "yes" to "The agent's own question receipts still show green chips. Make them plain like the new answer card?": each answer is plain foreground text at medium weight under its muted question (`PlainAnswer`), no chip, border or fill. Supersedes the 2026-10-11 green chips; desktop is question_exchange.rs.
  */
 
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { AnswerAside, AnswerChip, AskCard, AskHead, ReceiptRow, type AskTone } from './askCard';
+import { AnswerAside, AskCard, AskHead, PlainAnswer, ReceiptRow, type AskTone } from './askCard';
 import { Glyph, type GlyphName } from './icons';
 import { arr, isTrue, obj, str } from './json';
 import { themedStyles, useTranscriptTheme } from '../transcript/theme';
@@ -86,7 +89,7 @@ function ExchangeCard({ exchange }: { exchange: unknown }) {
           {questions.map((question, index) => (
             <ExchangeRow key={index} question={question} answer={answerAt(index)} parsedAnswers={answers !== null} index={index} />
           ))}
-          {fallback.length > 0 ? <ReceiptRow number={total + 1} question="" answer={<AnswerChip label={fallback} />} first={total === 0} /> : null}
+          {fallback.length > 0 ? <ReceiptRow number={total + 1} question="" answer={<PlainAnswer>{fallback}</PlainAnswer>} first={total === 0} /> : null}
         </View>
       ) : null}
     </AskCard>
@@ -112,7 +115,7 @@ function ExchangeRow({
   const other = str(answer, 'otherText');
   const prompt = str(question, 'question') || str(question, 'header');
   const picked = selected.map((optionIndex) => options[optionIndex]).filter((option) => option !== undefined);
-  // One picked option's description reads beside its chip, as the card showed it while it was asked.
+  // One picked option's description reads under its answer, as the card showed it while it was asked.
   const description = picked.length === 1 ? str(picked[0], 'description') : '';
   const showDescription = description.length > 0 && description !== str(picked[0], 'label');
   const unanswered =
@@ -125,21 +128,15 @@ function ExchangeRow({
       : null;
   const answerLine = (
     <>
-      {picked.map((option, optionIndex) => (
-        <AnswerChip key={optionIndex} label={str(option, 'label')} />
-      ))}
-      {showDescription ? <AnswerAside>{description}</AnswerAside> : null}
-      {other.length > 0 && picked.length === 0 ? (
-        <>
-          <AnswerChip label={other} />
-          <AnswerAside>Your own answer</AnswerAside>
-        </>
-      ) : null}
+      {picked.length > 0 ? <PlainAnswer>{picked.map((option) => str(option, 'label')).join(', ')}</PlainAnswer> : null}
+      {other.length > 0 && picked.length === 0 ? <PlainAnswer>{other}</PlainAnswer> : null}
       {unanswered !== null ? <AnswerAside italic>{unanswered}</AnswerAside> : null}
     </>
   );
   const below = (
     <>
+      {showDescription ? <AnswerAside>{description}</AnswerAside> : null}
+      {other.length > 0 && picked.length === 0 ? <AnswerAside>Your own answer</AnswerAside> : null}
       {other.length > 0 && picked.length > 0 ? <AnswerAside>{`Note: ${other}`}</AnswerAside> : null}
       {options.length > 0 ? (
         <>

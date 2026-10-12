@@ -16,6 +16,7 @@ import { Glyph, toolGlyph } from './icons';
 import { arr, obj, str, type JsonRecord } from './json';
 import { ShellCommandActions } from './MessageActions';
 import { useDisclosure } from './state';
+import { openTranscriptMenu } from './transcriptMenuStore';
 import { CODE_LINE, CODE_SIZE, MONO_FONT, PROSE_LINE, PROSE_SIZE } from './theme';
 
 /** Each row carries its own padding (the 2026-10-11 work look), so the gap between rows is small. */
@@ -106,7 +107,7 @@ export function ToolRows({ message }: { message: ProjectedMessage }) {
  * disclosure, from the header or the rail.
  */
 export function ShellCommandCard({ message }: { message: ProjectedMessage }) {
-  const { theme } = useTranscriptEnv();
+  const { theme, main } = useTranscriptEnv();
   const { disclosures } = useNativeChatUi();
   const card = obj(message.shellCard);
   const hasBody = card?.hasBody === true;
@@ -129,11 +130,13 @@ export function ShellCommandCard({ message }: { message: ProjectedMessage }) {
       <View style={[styles.shellBubble, styles.shellHeaderBubble, { backgroundColor: theme.input }]}>
         <View style={styles.shellHeader}>
           <Pressable
-            disabled={!hasBody}
-            onPress={toggle}
+            onPress={hasBody ? toggle : undefined}
+            // Holding the bubble opens the menu with Copy of the bare command (the main transcript only).
+            {...(main && fullCommand.length > 0 ? { onLongPress: () => openTranscriptMenu({ selection: fullCommand }) } : {})}
             accessibilityRole='button'
             accessibilityLabel={`Shell command: ${fullCommand}`}
-            accessibilityState={{ expanded: open }}
+            accessibilityHint={main ? 'Long press for Copy' : undefined}
+            accessibilityState={{ expanded: open, disabled: !hasBody }}
             style={({ pressed }) => [styles.trigger, styles.shellTrigger, pressed && { backgroundColor: theme.pressed }]}
           >
             <View style={styles.glyphSlot}>
@@ -148,7 +151,7 @@ export function ShellCommandCard({ message }: { message: ProjectedMessage }) {
           </Pressable>
         </View>
       </View>
-      {/* No hover on a phone, so the copy button always shows, with the prompts' own actions. */}
+      {/* The main transcript has Copy in the long-press menu; a transcript without one shows the button. */}
       <ShellCommandActions command={fullCommand} />
       {/* The output opens in a bubble of its own below the header, which keeps its collapsed size;
           the header is its toggle, so it carries no rail. */}

@@ -15,9 +15,17 @@ import { FileChangeStack } from './FileChanges';
 import { ImageRow } from './Images';
 import { arr, obj, str } from './json';
 import { Markdown } from './markdown/Markdown';
-import { DeliveryIndicator, hasReplyActions, isFlushReply, ReplyActions, UserActions } from './MessageActions';
+import {
+  DeliveryIndicator,
+  hasReplyActions,
+  isFlushReply,
+  ReplyActions,
+  UserActions,
+  useReplyMenuActions,
+  useUserMenuActions,
+} from './MessageActions';
 import { PageAnswersCard } from './PageAnswersCard';
-import { openTranscriptMenu } from './transcriptMenuStore';
+import { openTranscriptMenu, type MessageMenuAction } from './transcriptMenuStore';
 import { useDisclosure } from './state';
 import { InterAgentCard, SentAgentMessageCards } from './AgentMessageCards';
 import { estimatedLines, StartupDelivery, SuppressedRow, SystemCard, TerminalToolRow } from './SystemRows';
@@ -53,15 +61,16 @@ export const MessageRow = memo(function MessageRow({ message }: { message: Proje
 
 /**
  * The long press that opens the transcript menu on a message (desktop's right press), with the
- * message's own text as the selection. Only the main transcript has the menu (`TranscriptMenu.tsx`).
+ * message's own text as the selection and its own actions (`actions`) under Copy and Add to Chat.
+ * Only the main transcript has the menu (`TranscriptMenu.tsx`).
  */
-function useMessageMenu(message: ProjectedMessage): (() => void) | undefined {
+function useMessageMenu(message: ProjectedMessage, actions: MessageMenuAction[] = []): (() => void) | undefined {
   const { main } = useTranscriptEnv();
   const selection = typeof message.copyText === 'string' ? message.copyText : '';
-  return main && selection.trim().length > 0 ? () => openTranscriptMenu({ selection }) : undefined;
+  return main && selection.trim().length > 0 ? () => openTranscriptMenu({ selection, actions }) : undefined;
 }
 
-const MENU_HINT = 'Long press for Copy and Add to Chat';
+const MENU_HINT = 'Long press for Copy, Add to Chat and the message actions';
 
 function UserMessage({ message }: { message: ProjectedMessage }) {
   const { theme } = useTranscriptEnv();
@@ -71,7 +80,7 @@ function UserMessage({ message }: { message: ProjectedMessage }) {
   const collapsed = typeof message.collapsedText === 'string' ? message.collapsedText : '';
   const [open, toggle] = useDisclosure(disclosures, `prompt:${message.id}`);
   const shortened = collapsed.length > 0 && !open;
-  const openMenu = useMessageMenu(message);
+  const openMenu = useMessageMenu(message, useUserMenuActions(message));
   const prose = (
     <Markdown
       text={shortened ? collapsed : body}
@@ -132,7 +141,7 @@ function AgentMessage({ message, proseColor }: { message: ProjectedMessage; pros
   const flush = isFlushReply(message, flags.finalIds);
   const toolsKey = reasoning ? `reasoning:${id}` : `tools:${id}`;
   const [toolsOpen, toggleTools] = useDisclosure(disclosures, toolsKey, verbose);
-  const openMenu = useMessageMenu(message);
+  const openMenu = useMessageMenu(message, useReplyMenuActions(message));
   let lead = null;
   let toolsRendered = false;
   if (body.length > 0) {

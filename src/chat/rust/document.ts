@@ -629,6 +629,8 @@ export type NoteState = { open: boolean; value: string; saved: string; edited: b
 /** `enabled` shows the composer's button; `markdown` has its marked sections tagged like a reply's. */
 export type CatchUpState = {
   enabled: boolean;
+  /** The composer shows the button: `enabled` and the chat box is empty. */
+  button: boolean;
   open: boolean;
   loading: boolean;
   markdown: string;

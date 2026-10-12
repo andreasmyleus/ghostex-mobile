@@ -6,8 +6,8 @@
  */
 
 import * as Clipboard from 'expo-clipboard';
-import { useMemo } from 'react';
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
 import type { UserAction } from '../../rust/actions';
 import type { CatchUpState, Json } from '../../rust/document';
@@ -16,6 +16,9 @@ import { themedStyles, useTranscriptTheme } from '../transcript/theme';
 import { ChatButton, StatusCard } from './primitives';
 import { TranscriptEnvProvider, type TranscriptEnv } from '../transcript/context';
 import { Markdown } from '../transcript/markdown/Markdown';
+
+/** How long the button takes to fade in or out (desktop `BUTTON_FADE`). */
+const BUTTON_FADE_MS = 180;
 
 export function CatchUpCard({ catchUp, dispatch }: { catchUp: CatchUpState | undefined; dispatch: (action: UserAction) => void }) {
   const styles = useStyles();
@@ -65,10 +68,28 @@ export function CatchUpCard({ catchUp, dispatch }: { catchUp: CatchUpState | und
 export function CatchUpButton({ catchUp, dispatch }: { catchUp: CatchUpState | undefined; dispatch: (action: UserAction) => void }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
-  if (catchUp === undefined || !catchUp.enabled) return null;
+  // The core shows it only while the chat box is empty (`button`); it fades in and out, and stays
+  // mounted until its fade-out ends (desktop `catch_up.rs` does the same).
+  const visible = catchUp?.button === true;
+  const opacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const [mounted, setMounted] = useState(visible);
+  useEffect(() => {
+    if (visible) setMounted(true);
+    const fade = Animated.timing(opacity, {
+      toValue: visible ? 1 : 0,
+      duration: BUTTON_FADE_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    fade.start(({ finished }) => {
+      if (finished && !visible) setMounted(false);
+    });
+    return () => fade.stop();
+  }, [opacity, visible]);
+  if (catchUp === undefined || !mounted) return null;
   const color = catchUp.open ? P.controlPrimary : P.primary;
   return (
-    <View style={styles.buttonRow}>
+    <Animated.View style={[styles.buttonRow, { opacity }]} pointerEvents={visible ? 'auto' : 'none'}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Catch me up"
@@ -80,7 +101,7 @@ export function CatchUpButton({ catchUp, dispatch }: { catchUp: CatchUpState | u
         <Glyph name="sparkles" size={13} color={color} />
         <Text style={[styles.buttonLabel, { color }]}>{catchUp.loading ? 'Catching up…' : 'Catch me up'}</Text>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 

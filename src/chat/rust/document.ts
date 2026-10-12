@@ -413,6 +413,8 @@ export type ChatDocument = {
   incomingDraft: IncomingDraft | null;
   /** The session note sheet. Desktop: `note.rs`. */
   note: NoteState;
+  /** The Catch me up button and card (`composer/catch_up.rs`). Desktop: `catch_up.rs`. */
+  catchUp?: CatchUpState;
   /** Timings both renderers share. Desktop: `send_control.rs`. */
   interaction: Interaction;
   /** The toast drawn in the Scroll to bottom pill's place: `notice` while a first Escape waits,
@@ -623,6 +625,18 @@ export type ComposerChrome = {
 };
 
 export type NoteState = { open: boolean; value: string; saved: string; edited: boolean; loading: boolean };
+
+/** `enabled` shows the composer's button; `markdown` has its marked sections tagged like a reply's. */
+export type CatchUpState = {
+  enabled: boolean;
+  open: boolean;
+  loading: boolean;
+  markdown: string;
+  references: Json[];
+  copyText: string;
+  error: string | null;
+  caption: string | null;
+};
 
 export type Interaction = { queueLongPressMs: number; stopButtonCooldownMs: number };
 

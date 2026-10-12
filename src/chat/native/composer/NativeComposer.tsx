@@ -33,6 +33,7 @@ import { COMPOSER_CONTROLS, moreActionsRows, optionMenuRows, overflowed, sendCho
 import { MenuSheet, type MenuRow } from './MenuSheet';
 import { ModelMenuSheet } from './ModelMenuSheet';
 import { NotePanel } from './NotePanel';
+import { CatchUpButton, CatchUpCard } from '../cards/CatchUpCard';
 import { OptionPills, type PillKind } from './OptionPills';
 import { RunLocationRow } from './RunLocationRow';
 import { themedStyles, useTranscriptTheme } from '../transcript/theme';
@@ -405,6 +406,7 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
       {document?.incomingDraft ? <IncomingDraftBar draft={document.incomingDraft} dispatch={dispatch} /> : null}
       {/* A refused operation's error line is the card band's (`ComposerNotReadyCard`), where desktop draws it; drawing it here too showed it twice. */}
       {document !== null ? <NotePanel note={document.note} dispatch={dispatch} /> : null}
+      {document !== null ? <CatchUpCard catchUp={document.catchUp} dispatch={dispatch} /> : null}
       {document?.suggestions ? <Suggestions data={document.suggestions} dispatch={dispatch} /> : null}
       {document?.runLocation ? <RunLocationRow row={document.runLocation} dispatch={dispatch} /> : null}
       <Animated.View style={[styles.card, focused ? styles.cardFocused : null, motion.cardStyle]}>
@@ -428,6 +430,7 @@ export function NativeComposer({ chat, onHostAction, hostActions = DEFAULT_HOST_
             />
           ) : null}
           {document !== null ? <QueueList document={document} dispatch={dispatch} /> : null}
+          {!collapsed && document !== null ? <CatchUpButton catchUp={document.catchUp} dispatch={dispatch} /> : null}
           <View style={collapsed ? styles.collapsedRow : null}>
             <View style={collapsed ? styles.grow : null}>
               <ComposerInput

@@ -4,7 +4,8 @@
  * (the agent's logo, its name, one line of text that reads the same collapsed and opened, the time,
  * the status and a chevron) that opens to the whole message. Everything a card says is the core's
  * `card` object (`agent_message_card.rs`; the user's pick is the `CDXC:SessionChat 2026-10-12 DECISION` there);
- * this file only lays it out. The phone has no hover, so Go to session sits in the opened message.
+ * this file only lays it out. The phone has no hover, so Go to session sits in the opened message;
+ * a message sent to several sessions lists each of them there instead, each name opening its session.
  */
 
 import { memo } from 'react';
@@ -82,6 +83,9 @@ const AgentCard = memo(function AgentCard({
   const line = str(card, 'line');
   const time = str(card, 'time');
   const hairline = theme.ink(theme.light ? 0.08 : 0.05);
+  const recipients = arr(card.recipients)
+    .map((recipient) => obj(recipient))
+    .filter((recipient): recipient is JsonRecord => recipient !== null);
   const showSession = failure.length === 0 && session !== null;
 
   return (
@@ -118,6 +122,34 @@ const AgentCard = memo(function AgentCard({
               <Glyph name='arrow-up-right' size={12} color={theme.muted} />
               <Text style={[styles.gotoText, { color: theme.muted }]}>Go to session</Text>
             </Pressable>
+          ) : null}
+          {recipients.length > 0 ? (
+            <View style={styles.recipients}>
+              {recipients.map((recipient, index) => {
+                const target = obj(recipient.session);
+                const shown = obj(recipient.status);
+                return (
+                  <Pressable
+                    key={index}
+                    disabled={target === null}
+                    onPress={() => {
+                      if (target === null) return;
+                      dispatch({ type: 'openAgentSession', projectId: str(target, 'projectId'), sessionId: str(target, 'sessionId') });
+                    }}
+                    accessibilityRole={target !== null ? 'button' : undefined}
+                    accessibilityLabel={target !== null ? `Go to ${str(recipient, 'name')}` : undefined}
+                    hitSlop={4}
+                    style={({ pressed }) => [styles.recipient, pressed && target !== null && { backgroundColor: theme.ink(0.08) }]}
+                  >
+                    <Mark card={recipient} />
+                    <Text style={[styles.recipientName, { color: theme.foreground }]} numberOfLines={1}>
+                      {str(recipient, 'name')}
+                    </Text>
+                    {shown !== null ? <Status status={shown} /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
           ) : null}
           <Markdown text={body} references={references} color={theme.cardMuted} />
         </View>
@@ -204,6 +236,9 @@ const styles = StyleSheet.create({
   opened: { borderTopWidth: 1, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10, gap: 6 },
   goto: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 4, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: -6 },
   gotoText: { fontSize: 12.5, lineHeight: 17 },
+  recipients: { gap: 4, paddingBottom: 4 },
+  recipient: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 0, paddingVertical: 2, paddingHorizontal: 6, marginLeft: -6, borderRadius: 6 },
+  recipientName: { flexShrink: 1, minWidth: 0, fontSize: 13 },
   failure: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4, borderTopWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   failureText: { flex: 1, minWidth: 0 },
   action: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },

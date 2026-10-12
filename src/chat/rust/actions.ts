@@ -194,6 +194,10 @@ export type ActionFields = {
   editNote: { text: string };
   clearNote: {};
   saveNote: {};
+  /** Catch me up: the composer's button (opens and asks, or closes), the card's Refresh and Close. */
+  catchUp: {};
+  catchUpRefresh: {};
+  catchUpClose: {};
   markdownSaveOpen: { markdown: string };
   markdownSaveFolder: { [field: string]: unknown };
   markdownSaveName: { [field: string]: unknown };

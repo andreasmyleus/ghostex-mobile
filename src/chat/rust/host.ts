@@ -54,6 +54,7 @@ import {
   recordDeliveries,
   type ParkResult,
 } from './host-records';
+import { currentSessionDirectory, subscribeSessionDirectory } from './sessionDirectory';
 import { readRecord, readRetainedSnapshot, writeRecord, writeRetainedSnapshot } from './storage';
 import { SessionChatStream, sessionChatRpc, type RpcAnswer } from './transport';
 import { markSessionOpen } from '../../terminal/openTiming';
@@ -173,6 +174,7 @@ export class RustChatHost {
   private draftRetryFailures = 0;
   private draftRetryBusy = false;
   private appStateSubscription: NativeEventSubscription | null = null;
+  private unsubscribeSessionDirectory: (() => void) | null = null;
   /** Session-open timing (`terminal/openTiming.ts`): the phone tab's `${machineId}:${sessionId}`. */
   private readonly openTraceKey: string;
   private retainedTranscriptLoaded = false;
@@ -239,6 +241,11 @@ export class RustChatHost {
         ...(initialPresentation !== undefined ? { initialPresentation } : {}),
       },
     });
+    // The other session on a message between agents is named from the inventory's session list.
+    this.enqueue({ type: 'sessionDirectoryChanged', sessions: currentSessionDirectory() });
+    this.unsubscribeSessionDirectory = subscribeSessionDirectory((sessions) =>
+      this.enqueue({ type: 'sessionDirectoryChanged', sessions }),
+    );
     // `replayDraftSaves`: a save an earlier run could not deliver is still in the outbox.
     this.scheduleDraftRetry(0);
     // Only `background` pauses: `inactive` is a pulled-down notification centre or an app switcher
@@ -255,6 +262,8 @@ export class RustChatHost {
     this.disposed = true;
     this.appStateSubscription?.remove();
     this.appStateSubscription = null;
+    this.unsubscribeSessionDirectory?.();
+    this.unsubscribeSessionDirectory = null;
     this.poll.stop();
     if (this.timer !== null) clearTimeout(this.timer);
     if (this.draftRetryTimer !== null) clearTimeout(this.draftRetryTimer);

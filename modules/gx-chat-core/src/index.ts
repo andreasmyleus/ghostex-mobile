@@ -69,7 +69,20 @@ export type ChatCoreEvent =
   | { type: 'modelCatalogChanged'; catalog: unknown }
   | { type: 'measured'; measurement: ChatMeasurement }
   /** The composer text the host owns changed outside the core. */
-  | { type: 'draftChanged'; text: string };
+  | { type: 'draftChanged'; text: string }
+  /** Every session the phone's inventory knows, which names the other session on a message
+   * between agents. */
+  | { type: 'sessionDirectoryChanged'; sessions: ChatKnownSession[] };
+
+/** `KnownSession`: one session of the host's session list. */
+export type ChatKnownSession = {
+  globalRef: string;
+  projectId: string;
+  sessionId: string;
+  title: string;
+  agentId: string;
+  agentName: string;
+};
 
 export type ChatMeasurement =
   | { kind: 'composerOverflow'; overflowed: string[]; optionsOverflowed: boolean }

@@ -889,3 +889,32 @@ export function resolveAgentPromptLaunchCommand(
   const forkFlag = fork.length > 0 ? ` --fork-agent ${shellQuote(fork)}` : '';
   return `ghostex resolve-agent-prompt-launch ${promptKeyFlag(key)} --action ${action}${forkFlag} --json`;
 }
+
+/*
+ * Closed sessions for the Sessions search, over SSH like Find above: the list
+ * the desktop's Sessions search pages through, and the daemon-owned restore
+ * (server/src/ghostex_cli/previous_sessions.rs). A computer whose Ghostex
+ * predates the verbs answers "Unknown command", which the search shows as
+ * closed sessions being unavailable there.
+ */
+
+/** `ghostex previous-sessions [--query q] [--cursor c] --limit n --json` */
+export function previousSessionsCommand(options: {
+  query?: string;
+  cursor?: string;
+  limit: number;
+}): string {
+  const parts = ['ghostex previous-sessions'];
+  const query = options.query?.trim() ?? '';
+  if (query.length > 0) parts.push(`--query ${shellQuote(query)}`);
+  const cursor = options.cursor?.trim() ?? '';
+  if (cursor.length > 0) parts.push(`--cursor ${shellQuote(cursor)}`);
+  parts.push(`--limit ${Math.max(1, Math.floor(options.limit))}`);
+  parts.push('--json');
+  return parts.join(' ');
+}
+
+/** `ghostex restore-previous-session --project-id <id> --session-id <id> --json` */
+export function restorePreviousSessionCommand(projectId: string, sessionId: string): string {
+  return `ghostex restore-previous-session --project-id ${shellQuote(requirePositional(projectId, 'project id'))} --session-id ${shellQuote(requirePositional(sessionId, 'session id'))} --json`;
+}

@@ -213,6 +213,12 @@ export const SessionSearchCopy = {
   noMatches: 'No sessions match that search.',
   noSessions: 'No sessions yet.',
   unknownDay: 'Unknown day',
+  closedLabel: 'closed',
+  loadingClosed: 'Loading closed sessions...',
+  closedUnavailable: (computers: string) => `Closed sessions could not be loaded from ${computers}.`,
+  restoring: 'Restoring...',
+  restoreFailed: (reason: string) => `Could not restore this session. ${reason}`,
+  notRestorable: 'This session can no longer be restored.',
 } as const;
 
 /** Find Prompts (the GUI for `gx f`) and the prompt screen it opens. */

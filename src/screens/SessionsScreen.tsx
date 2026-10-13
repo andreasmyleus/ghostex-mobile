@@ -133,6 +133,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { resolveSelectedSpaceId, spaceRowItems, spaceSessionCounts } from '../spaces/spaceFilter';
 import { useSpacesStore } from '../spaces/store';
 import { revealSessionWorkspace, useWorkspacesStore } from '../workspaces/store';
+import { restoreClosedSession } from '../sessions/closedSessions';
 import { filterSummaryForWorkspace, resolveWorkspaceId, workspaceSwitchTarget } from '../workspaces/workspaceFilter';
 import { useSettingsStore } from '../settings/store';
 import { acknowledgeSessionAttention } from '../terminal/attention';
@@ -1287,8 +1288,8 @@ export default function SessionsScreen({ navigation }: Props) {
           <Text style={[styles.title, { color: sidebarAppearance.foreground }]}>Ghostex</Text>
         </Pressable>
         {/*
-          CDXC:Sessions 2026-09-30 DECISION:
-          User: "add the ability to search for a session, exactly like the modal we have in the app ... add it to the top right as a search icon button." The first button of the header's right-hand group opens SessionSearchSheet, which searches every visible computer's sessions with the desktop's Sessions search rules.
+          CDXC:Sessions 2026-10-01 DECISION:
+          User: "add the ability to search for a session, exactly like the modal we have in the app ... add it to the top right as a search icon button", and then chose that the search also finds closed sessions and restores one when tapped, as the desktop's does. The first button of the header's right-hand group opens SessionSearchSheet, which searches every visible computer's open and closed sessions with the desktop's Sessions search rules; this supersedes the 2026-09-30 open-sessions-only search.
         */}
         <Pressable
           accessibilityRole="button"
@@ -1477,6 +1478,17 @@ export default function SessionsScreen({ navigation }: Props) {
           if (machine?.id !== target.id) selectMachine(target.id);
           revealSessionWorkspace(target.id, session.sessionId);
           void attach(target, session);
+        }}
+        onRestore={async (target, closed) => {
+          // A failure here stays in the search panel, which shows it under the field.
+          const restored = await restoreClosedSession(target, closed);
+          await refreshMachine(target);
+          setSessionSearchOpen(false);
+          if (machine?.id !== target.id) selectMachine(target.id);
+          revealSessionWorkspace(target.id, restored.sessionId);
+          void attachCreated(target, restored.sessionId).catch((error: unknown) => {
+            setTransientStatus(error instanceof Error ? error.message : String(error));
+          });
         }}
         onClose={() => setSessionSearchOpen(false)}
       />

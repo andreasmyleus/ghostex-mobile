@@ -57,6 +57,7 @@ import {
   exportSessionTranscriptCommand,
   forkSessionCommand,
   promoteCoordinatorCommand,
+  sleepInactiveCoordinatorThreadsCommand,
   moveProjectCommand,
   removeProjectCommand,
   setProjectWorkModeCommand,
@@ -358,6 +359,22 @@ export function useSessionsScreenMenus({
     }
   };
 
+  /** Sleep Inactive Threads: gxserver picks the orchestrator's idle threads and sleeps them. */
+  const sleepInactiveCoordinatorThreads = async (machine: MachineRecord, session: GhostexSession): Promise<void> => {
+    setProgress('Sleeping inactive threads…');
+    try {
+      const { json } = await runGhostexCli(machine, sleepInactiveCoordinatorThreadsCommand(session.globalRef));
+      const slept = Array.isArray(json?.slept) ? json.slept.length : 0;
+      setTransientStatus(
+        slept === 0 ? 'No inactive threads to sleep' : `Slept ${slept} inactive thread${slept === 1 ? '' : 's'}`,
+      );
+    } catch (error) {
+      setTransientStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setProgress(null);
+    }
+  };
+
   /** The Link to picker's suggestions for `query` (`ghostex link-session --candidates`). */
   const loadWorkLinkCandidates = async (
     ctx: SessionContext,
@@ -469,6 +486,9 @@ export function useSessionsScreenMenus({
         });
         return;
       }
+      case 'sleepInactiveCoordinatorThreads':
+        void sleepInactiveCoordinatorThreads(machine, requireSession().item.session);
+        return;
       case 'copyWorkspaceProjectPathForGroup': {
         const { header } = requireProject();
         copyToClipboard(header.projectPath, 'Path copied');
@@ -606,6 +626,13 @@ export function useSessionsScreenMenus({
       session: ctx.item.session,
       customTags: summaryFor(ctx.machine.id)?.customSessionTags ?? EMPTY_CUSTOM_SESSION_TAGS,
       below: sessionsBelow(ctx),
+      threads: ctx.item.session.isCoordinator
+        ? (summaryFor(ctx.machine.id)?.sessions ?? []).filter(
+            (thread) =>
+              thread.coordinatorProjectId === ctx.item.session.projectId &&
+              thread.coordinatorSessionId === ctx.item.session.sessionId,
+          )
+        : [],
       project:
         summaryFor(ctx.machine.id)?.projects.find(
           (project) => project.projectId === ctx.item.session.projectId,

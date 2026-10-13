@@ -266,6 +266,15 @@ export function promoteCoordinatorCommand(globalRef: string): string {
   return `ghostex coordinator promote ${shellQuote(requireId(globalRef, 'session reference'))} --json`;
 }
 
+/**
+ * `ghostex coordinator sleep-inactive-threads`: sleeps the orchestrator's own threads that the
+ * project menu's Sleep Inactive would sleep. gxserver picks the threads
+ * (server/src/coordinators/sleep_threads.rs), the same set the desktop's menu sleeps.
+ */
+export function sleepInactiveCoordinatorThreadsCommand(globalRef: string): string {
+  return `ghostex coordinator sleep-inactive-threads ${shellQuote(requireId(globalRef, 'session reference'))} --json`;
+}
+
 /** Quick action: `ghostex run-action <commandId> --project-id <id>` (always prints JSON). */
 export function runActionCommand(commandId: string, projectId: string): string {
   return (

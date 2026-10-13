@@ -49,6 +49,7 @@ export type SidebarMenuMessage =
   | { type: 'forkSession'; sessionId: string }
   | { type: 'fullReloadSession'; sessionId: string }
   | { type: 'makeCoordinator'; sessionId: string }
+  | { type: 'sleepInactiveCoordinatorThreads'; sessionId: string }
   | { type: 'exportSessionTranscript'; sessionId: string }
   | { type: 'cancelDelayedSend'; sessionId: string }
   | { type: 'copySessionDetails'; sessionId: string; text: string }
@@ -414,6 +415,8 @@ export type SessionMenuInput = {
   customTags: GhostexCustomSessionTags;
   /** The rows drawn under this one in its group, for Sleep Below and Close Below. */
   below: readonly GhostexSession[];
+  /** On an orchestrator row: its own threads on the machine, for Sleep Inactive Threads. */
+  threads: readonly GhostexSession[];
   /** The session's project, whose title and worktree Copy Details quotes; null when unknown. */
   project: Pick<GhostexProject, 'name' | 'path' | 'worktree' | 'workMode' | 'workTracker'> | null;
 };
@@ -584,7 +587,7 @@ function copySubmenu(session: GhostexSession, project: SessionMenuInput['project
  * computer's own panes.
  */
 export function buildSessionMenu(input: SessionMenuInput): SidebarMenuItem[] {
-  const { session, customTags, below, project } = input;
+  const { session, customTags, below, threads, project } = input;
   const settings = PHONE_MENU_SETTINGS;
   const caps = sessionCapabilities(session);
   const id = session.sessionId;
@@ -662,6 +665,19 @@ export function buildSessionMenu(input: SessionMenuInput): SidebarMenuItem[] {
     if (!shown || item === undefined) continue;
     if (action === 'tag' && menu.length > 0) menu.push(separator());
     menu.push(action === 'pin' && !pinned ? { ...item, icon: 'pinned' } : item);
+  }
+
+  // CDXC:Coordinators 2026-10-13 SEE-ALSO: the user's decision on `is_sleep_inactive_session` in server/src/coordinators/sleep_threads.rs, which decides which threads sleep (gx-core `full_menu` draws the desktop's twin row). The disabled test is only the phone's Sleep Inactive hint, which never greys out a row gxserver would act on.
+  if (session.isCoordinator && session.isDraft !== true) {
+    if (menu.length > 0) menu.push(separator());
+    menu.push({
+      ...row(
+        'Sleep Inactive Threads',
+        'moon',
+        command({ type: 'sleepInactiveCoordinatorThreads', sessionId: id }),
+      ),
+      disabled: !threads.some(isInactiveSession),
+    });
   }
 
   const advanced: SidebarMenuItem[] = [heading('Session')];

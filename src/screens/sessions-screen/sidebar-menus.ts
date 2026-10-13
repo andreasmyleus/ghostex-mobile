@@ -581,15 +581,6 @@ function copySubmenu(session: GhostexSession, project: SessionMenuInput['project
 }
 
 /**
- * The session row's context menu.
- *
- * Left out, because the phone has no way to run them: Snooze / Unsnooze (no `ghostex` verb for
- * gxserver's `/api/snoozeSession`), the five Postpone By presets (no verb for
- * `/api/postponeDelayedSend`), Switch Account, View 1st Message (the summary carries no first
- * message), Generate Title, Move to New Group, and New Tag…; Split Right and Focus act on the
- * computer's own panes.
- */
-/**
  * gx-core `coordinator_rows` (CDXC:Coordinators 2026-10-13, the user's decision there): an
  * orchestrator's Goal & Instructions and Memory editors, a thread's Mark Thread Done (disabled
  * while it works or waits on an answer) or, once done, Reopen Thread, after a separator.
@@ -620,6 +611,15 @@ function coordinatorRows(session: GhostexSession): SidebarMenuItem[] {
   return rows.length === 1 ? [] : rows;
 }
 
+/**
+ * The session row's context menu.
+ *
+ * Left out, because the phone has no way to run them: Snooze / Unsnooze (no `ghostex` verb for
+ * gxserver's `/api/snoozeSession`), the five Postpone By presets (no verb for
+ * `/api/postponeDelayedSend`), Switch Account, View 1st Message (the summary carries no first
+ * message), Generate Title, Move to New Group, and New Tag…; Split Right and Focus act on the
+ * computer's own panes.
+ */
 export function buildSessionMenu(input: SessionMenuInput): SidebarMenuItem[] {
   const { session, customTags, below, threads, project } = input;
   const settings = PHONE_MENU_SETTINGS;

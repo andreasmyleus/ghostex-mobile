@@ -115,6 +115,7 @@ const IGNORED_PLACEHOLDER_SESSION_TITLES: readonly string[] = [
   'cursor agent session',
   'cursor cli session',
   'cursor session',
+  'freebuff session',
   'mastra session',
   'mastra code session',
   'devin session',
@@ -156,6 +157,7 @@ const DEFAULT_SESSION_AGENT_TITLE_NAMES: readonly string[] = [
   'Devin',
   'Factory Droid',
   'Empryo',
+  'Freebuff',
   'Gemini',
   'Grok Build',
   'Hermes Agent',
@@ -195,15 +197,45 @@ const LEADING_OC_PREFIXES = /^(?:OC\s*\|\s*)+/iu;
 /** Cursor CLI's ` - ✅ Ready` and ` - ⏳ Working ...` suffixes (`normalize_cursor_title`). */
 const CURSOR_STATUS_SUFFIX = /\s*-\s*(?:✅ Ready|⏳ Working [.·]+)$/u;
 const CODEX_SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Freebuff's `Freebuff: <prompt>` title (`normalize_terminal_title`). */
+const FREEBUFF_TITLE_PREFIX = 'Freebuff: ';
+const EMPRYO_TITLE_SUFFIX = ' \u2014 empryo';
+const EMPRYO_WORKING_SUFFIX = ' \u00b7 working';
+
+/** `is_empryo_channel_tail`: nothing, or one parenthesised label such as ` (beta)`. */
+function isEmpryoChannelTail(tail: string): boolean {
+  return tail === '' || /^ \([^()]+\)$/u.test(tail);
+}
+
+/** `strip_empryo_title_suffix`: Empryo's `<tab> · working \u2014 Empryo (beta)` title is its tab name. */
+function stripEmpryoTitleSuffix(title: string): string {
+  const trimmed = title.trimEnd();
+  // ASCII-only folding keeps offsets into `trimmed`, as gx-core's does.
+  const folded = trimmed.replace(/[A-Z]+/g, (letters) => letters.toLowerCase());
+  if (!folded.includes('empryo')) return title;
+  let body: string;
+  if (folded.startsWith('empryo') && isEmpryoChannelTail(folded.slice('empryo'.length))) {
+    body = '';
+  } else {
+    const index = folded.lastIndexOf(EMPRYO_TITLE_SUFFIX);
+    if (index < 0 || !isEmpryoChannelTail(folded.slice(index + EMPRYO_TITLE_SUFFIX.length))) {
+      return title;
+    }
+    body = trimmed.slice(0, index);
+  }
+  body = body.trimEnd();
+  if (body.endsWith(EMPRYO_WORKING_SUFFIX)) {
+    body = body.slice(0, -EMPRYO_WORKING_SUFFIX.length).trimEnd();
+  }
+  return body.length === 0 ? 'Empryo' : body;
+}
 
 function isCodexSessionIdTitle(title: string): boolean {
-  const sanitized = title
-    .trim()
-    .replace(LEADING_STATUS_MARKERS, '')
-    .replace(LEADING_OC_PREFIXES, '')
-    .trim()
-    .replace(CURSOR_STATUS_SUFFIX, '')
-    .trim();
+  let sanitized = title.trim().replace(LEADING_STATUS_MARKERS, '').replace(LEADING_OC_PREFIXES, '').trim();
+  if (sanitized.startsWith(FREEBUFF_TITLE_PREFIX)) {
+    sanitized = sanitized.slice(FREEBUFF_TITLE_PREFIX.length).trim();
+  }
+  sanitized = stripEmpryoTitleSuffix(sanitized).replace(CURSOR_STATUS_SUFFIX, '').trim();
   return CODEX_SESSION_ID.test(sanitized);
 }
 

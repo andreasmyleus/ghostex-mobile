@@ -18,8 +18,8 @@ import {
 const PAGE_SIZE = 80;
 /** With no query the desktop keeps paging until the two-week window is covered; the phone stops here. */
 const MAX_WINDOW_PAGES = 5;
-/** gxserver may resume the conversation, which starts its agent; its own step limit is 60 s. */
-const RESTORE_TIMEOUT_MS = 95_000;
+/** Above the CLI's own 30 s wait for gxserver to create the new session. */
+const RESTORE_TIMEOUT_MS = 35_000;
 
 /**
  * CDXC:Sessions 2026-10-01 WHY:
@@ -50,9 +50,10 @@ export async function fetchClosedSessions(
 }
 
 /**
- * Bring a closed session back on its computer. gxserver restores a terminal
- * session, or resumes an agent conversation into a new session, and answers
- * with the session to open.
+ * Bring a closed session back on its computer through gxserver's one restore
+ * (`/api/restorePreviousSession`, the same the desktop uses): a new session
+ * carrying the closed one's agent and conversation, which resumes when the
+ * phone attaches to it.
  */
 export async function restoreClosedSession(
   machine: MachineRecord,

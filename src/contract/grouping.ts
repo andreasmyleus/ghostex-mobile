@@ -25,9 +25,6 @@ import {
   type GhostexSessionGroup,
 } from './mobileSummary';
 
-/** Collapsed session list shows this many rows before "Show more". */
-export const PROJECT_SESSION_LIST_COLLAPSED_COUNT = 6;
-
 /** Synthetic project key for the merged chat-projects collection. */
 export const CHATS_PROJECT_KEY = 'chats';
 
@@ -131,10 +128,6 @@ export type ProjectHeaderItem = {
    */
   agents: GhostexAgentLauncher[];
   quickActions: GhostexQuickAction[];
-  /** True when the session list exceeds the collapsed cap (toggle exists). */
-  sessionListClipped: boolean;
-  /** True when the list is currently clipped to the collapsed cap. */
-  sessionListCollapsed: boolean;
 };
 
 export type ProjectEmptyItem = {
@@ -201,22 +194,6 @@ export type SessionKindLabelItem = {
 };
 
 /**
- * "Show N more" reveal row (desktop renders it as a session-styled row) or the
- * Quick section's "Show less" counterpart.
- */
-export type SessionListToggleItem = {
-  type: 'SESSION_LIST_TOGGLE';
-  key: string;
-  machineId: string;
-  projectKey: string;
-  /** True when the list is currently collapsed (label "Show N more"). */
-  collapsed: boolean;
-  label: string;
-  totalSessionCount: number;
-  collectionColor?: string;
-};
-
-/**
  * The quiet row at the end of an expanded coordinator's threads that lists its older ones (or
  * tucks them away again); coordinatorTree.ts decides which threads are older.
  */
@@ -243,7 +220,6 @@ export type DrawerItem =
   | GroupHeaderItem
   | SessionKindLabelItem
   | SessionItem
-  | SessionListToggleItem
   | CoordinatorOlderItem;
 
 export type DrawerItemType = DrawerItem['type'];
@@ -535,12 +511,6 @@ export type DrawerBuildInput = {
   /** Named-group expansion, keyed by groupCollapseKey(). */
   expandedGroupKeys: ReadonlySet<string>;
   /**
-   * Flat-project session-list collapse (persisted per machine), keyed by
-   * projectKey. Presence = collapsed to 6 rows ("Show more" toggle). Matches
-   * the desktop default of showing all sessions until explicitly collapsed.
-   */
-  collapsedSessionListKeys: ReadonlySet<string>;
-  /**
    * Collapsed top-level sections ('quick' | 'projects'). Presence = collapsed;
    * both sections default expanded like the desktop reference sidebar.
    */
@@ -595,7 +565,6 @@ export function buildDrawerItems(input: DrawerBuildInput): DrawerItem[] {
     expandedProjectKeys,
     expandedCollectionIds,
     expandedGroupKeys,
-    collapsedSessionListKeys,
     collapsedSectionKeys,
     collapsedSessionKindKeys,
     expandedParkedSessionKeys = new Set<string>(),
@@ -705,15 +674,11 @@ export function buildDrawerItems(input: DrawerBuildInput): DrawerItem[] {
     ];
     /*
      * What a section heading counts: every session of that section, including
-     * rows a compact list leaves out (sections.rs counts all members) and the
-     * threads of a folded coordinator, less the members of named groups, which
+     * the threads of a folded coordinator, less the members of named groups, which
      * the desktop draws as groups of their own.
      */
     const sectionPool = tree.sessions;
     const shownProjectSessions = projectSessions.filter((session) => !isFolded(session));
-    const sessionListClipped =
-      namedGroups.length === 0 && shownProjectSessions.length > PROJECT_SESSION_LIST_COLLAPSED_COUNT;
-    const sessionListCollapsed = sessionListClipped && collapsedSessionListKeys.has(projectKey);
 
     const collapsed = !expandedProjectKeys.has(projectKey);
     items.push({
@@ -738,8 +703,6 @@ export function buildDrawerItems(input: DrawerBuildInput): DrawerItem[] {
       themeColor: project !== null ? project.themeColor : '',
       agents: projectId.length > 0 ? summary.agents : [],
       quickActions: projectId.length > 0 ? summary.quickActionsByProject[projectId] ?? [] : [],
-      sessionListClipped,
-      sessionListCollapsed,
     });
     if (collapsed) return;
 
@@ -823,27 +786,14 @@ export function buildDrawerItems(input: DrawerBuildInput): DrawerItem[] {
     };
 
     if (namedGroups.length === 0) {
-      // Flat project: 6-row collapse; the collapsed reveal is a session-styled
-      // "Show N more" row, expanded lists collapse via the header chevron.
-      const visibleCount = sessionListCollapsed
-        ? PROJECT_SESSION_LIST_COLLAPSED_COUNT
-        : shownProjectSessions.length;
-      emitSessionsWithKindLabels(shownProjectSessions.slice(0, visibleCount), legacyGroupId);
+      /**
+       * CDXC:Projects 2026-10-13 DECISION: User: "remove this feature, no more show less / show
+       * more." A project and the Chats collection always list every session; the 6-row collapse,
+       * its "Show N more" row and the saved collapsed lists are gone (gx-core sidebar_view/sections.rs
+       * holds the desktop's half). Section headings still collapse.
+       */
+      emitSessionsWithKindLabels(shownProjectSessions, legacyGroupId);
       emitDraftSection();
-      if (sessionListCollapsed) {
-        items.push({
-          type: 'SESSION_LIST_TOGGLE',
-          key: `toggle:${projectKey}`,
-          machineId,
-          projectKey,
-          collapsed: true,
-          label: SessionCopy.showCountMore(
-            shownProjectSessions.length - PROJECT_SESSION_LIST_COLLAPSED_COUNT,
-          ),
-          totalSessionCount: shownProjectSessions.length,
-          collectionColor,
-        });
-      }
       emitSessionsWithKindLabels(parkedSessions, '');
       return;
     }
@@ -945,11 +895,7 @@ export function buildDrawerItems(input: DrawerBuildInput): DrawerItem[] {
         text: SessionCopy.emptyQuickRow,
       });
     } else {
-      const clipped = chatSessions.length > PROJECT_SESSION_LIST_COLLAPSED_COUNT;
-      const listCollapsed = clipped && collapsedSessionListKeys.has(CHATS_PROJECT_KEY);
-      const visibleCount = listCollapsed ? PROJECT_SESSION_LIST_COLLAPSED_COUNT : chatSessions.length;
-      for (let index = 0; index < visibleCount; index++) {
-        const session = chatSessions[index];
+      for (const session of chatSessions) {
         items.push({
           type: 'SESSION',
           key: `session:${CHATS_PROJECT_KEY}:${session.sessionId}`,
@@ -960,19 +906,6 @@ export function buildDrawerItems(input: DrawerBuildInput): DrawerItem[] {
           projectTitle: SessionCopy.chatsTitle,
           projectPath: '',
           session,
-        });
-      }
-      if (clipped) {
-        items.push({
-          type: 'SESSION_LIST_TOGGLE',
-          key: `toggle:${CHATS_PROJECT_KEY}`,
-          machineId,
-          projectKey: CHATS_PROJECT_KEY,
-          collapsed: listCollapsed,
-          label: listCollapsed
-            ? SessionCopy.showCountMore(chatSessions.length - PROJECT_SESSION_LIST_COLLAPSED_COUNT)
-            : SessionCopy.showLess,
-          totalSessionCount: chatSessions.length,
         });
       }
       if (parkedChatSessions.length > 0) {

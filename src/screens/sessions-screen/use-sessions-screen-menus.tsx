@@ -141,7 +141,6 @@ export type SessionsScreenMenusDeps = {
   entries: DrawerBlock[];
   collapse: {
     collapseAllProjects: (machineId: string) => void;
-    toggleSessionList: (machineId: string, projectKey: string) => void;
     expandAllProjects: (machineId: string, projectKeys: string[], collectionIds: string[]) => void;
   };
   lastActionByProject: Record<string, string>;
@@ -270,7 +269,6 @@ export function useSessionsScreenMenus({
           if (next.item.type === 'SESSION') below.push(next.item.session);
           else if (
             next.item.type !== 'SESSION_KIND_LABEL' &&
-            next.item.type !== 'SESSION_LIST_TOGGLE' &&
             next.item.type !== 'COORDINATOR_OLDER'
           )
             break;
@@ -743,21 +741,9 @@ export function useSessionsScreenMenus({
     };
     /*
      * CDXC:Sessions 2026-10-08 DECISION:
-     * User: "move almost all of the buttons that appear next to an expanded project into the 3 dots menu; just keep the agent picker one and the new agent one." Show fewer sessions, the project's quick actions and Create Terminal used to be header buttons; they lead this menu, each with the icon it had as a button.
+     * User: "move almost all of the buttons that appear next to an expanded project into the 3 dots menu; just keep the agent picker one and the new agent one." The project's quick actions and Create Terminal used to be header buttons; they lead this menu, each with the icon it had as a button. (Its Show fewer sessions row went with the compact list on 2026-10-13, CDXC:Projects in contract/grouping.ts.)
      */
     const headerRows: ContextMenuItem[] = [];
-    if (!header.collapsed && header.sessionListClipped && !header.sessionListCollapsed) {
-      headerRows.push({
-        kind: 'item',
-        key: 'show-fewer',
-        label: 'Show fewer sessions',
-        icon: <ChevronDownGlyph size={14} color={menuIconColor} rotated />,
-        onPress: () => {
-          setOverlay(NONE);
-          collapse.toggleSessionList(ctx.machine.id, header.projectKey);
-        },
-      });
-    }
     if (header.quickActions.length > 0) {
       const lastAction = header.quickActions.find(
         (action) => (action.commandId ?? '') === (lastActionByProject[lastActionKey(ctx.machine.id, header.projectId)] ?? ''),

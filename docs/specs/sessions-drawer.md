@@ -45,7 +45,7 @@ Header "Settings" + back. Status "Edit chat, terminal behavior, and remote-sessi
 
 ## 2. Row types
 
-Flat list items: STATE_CARD, MACHINE_HEADER, PROJECT_HEADER, PROJECT_AGENTS_ROW, PROJECT_EMPTY, GROUP_HEADER, PROJECT_SESSION_LIST_TOGGLE, SESSION. Collapsed session list shows 6 (`PROJECT_SESSION_LIST_COLLAPSED_COUNT = 6`).
+Flat list items: STATE_CARD, MACHINE_HEADER, PROJECT_HEADER, PROJECT_AGENTS_ROW, PROJECT_EMPTY, GROUP_HEADER, SESSION. Every project lists all of its sessions (the 6-row "Show more" collapse was removed on 2026-10-13).
 
 ### SESSION row
 
@@ -101,8 +101,6 @@ Horizontal scroll chips under project header (not for Chats; needs stable projec
 
 ### GROUP_HEADER: muted 13sp bold, padding 14/10/12/4; "{title}" or "{title} ({count})" collapsed; tap toggles (in-memory).
 
-### TOGGLE: muted 13sp "Show more"/"Show less" (>6 sessions in flat project).
-
 ### STATE_CARD: padding 12, minHeight 104, radius 8, bg #262626 + BORDER. Title 15sp bold; body 12sp muted marginTop 6; action hint 12sp bold #7DD3FC marginTop 10. Tap → recovery actions sheet.
 
 ## 3. Grouping & ordering
@@ -110,7 +108,7 @@ Horizontal scroll chips under project header (not for Chats; needs stable projec
 - Project key: `id:` → `path:` → `name:` → `session:` fallback. Chat projects merge into synthetic "chats" key titled "Chats", ordered first.
 - Project order: chats → workspaceGroups.projectOrder ids → remaining projects array order → leftovers.
 - preserveSessionOrder when workspaceGroups present OR any sortOrder present; else sort: browser-kind first → pinned (saved order) → attention(2)>working(1)>idle(0) → most recent lastInteractionAt → stable.
-- Per project: HEADER → (collapsed? stop) → AGENTS_ROW → (empty? PROJECT_EMPTY) → grouped (ungrouped "main" sessions first, then GROUP_HEADER + members per group in sessionIds order, skip empty groups) or flat (6 + Show more).
+- Per project: HEADER → (collapsed? stop) → AGENTS_ROW → (empty? PROJECT_EMPTY) → grouped (ungrouped "main" sessions first, then GROUP_HEADER + members per group in sessionIds order, skip empty groups) or flat (every session).
 - Collapse persistence: project + session-list collapse persisted per machine; group + machine collapse in-memory.
 - Recent Projects modal: title "Recent Projects", subtitle "Choose a parked project to restore to the active sidebar.", rows title + "{path} · {n session(s)}", tap → `ghostex restore-recent-project --project-id '<id>' --json`; status "Restoring {title}..." → "Restored {title}."
 
@@ -227,8 +225,7 @@ and recloned every surface from the live CSS cascade.
   #FF6B6B, grey for remote sleeping, nothing for idle. Same displayStatus
   as the collapsed project/group count pills. Pinned rows show a mirrored
   13dp pin at 50% opacity.
-  "Show more" renders as a session-styled "Show N more" row; "Show less" is
-  the header chevron button. Empty projects render the dashed "No sessions"
+  Empty projects render the dashed "No sessions"
   38dp box; empty Quick renders bare "No Quick Sessions" (#444444).
 - **Ordering** (unchanged): browser-kind first → pinned in saved order →
   attention > working > idle → newest lastInteractionAt → stable wire order;

@@ -1121,8 +1121,8 @@ const kindLabelStyles = StyleSheet.create({
 });
 
 // ---------------------------------------------------------------------------
-// SESSION_LIST_TOGGLE: desktop renders "Show N more" as a session-styled row
-// (15.5dp light title at 0.8 opacity, same 34dp geometry, no chevron).
+// A quiet session-styled text row (a coordinator's "N older threads"): 15.5dp
+// light title at 0.8 opacity, same 34dp geometry, no chevron.
 // ---------------------------------------------------------------------------
 
 export function SessionListToggleRow({

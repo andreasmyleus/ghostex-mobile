@@ -3,9 +3,10 @@
  * Matching the desktop gpui sidebar request: on first start EVERYTHING
  * (collections, projects, named groups) is collapsed, so the store tracks
  * EXPANDED sets — absence means collapsed. Projects, collections, and named
- * groups are persisted per machine (AsyncStorage, v2 key); the flat-project
- * "Show more" collapse and the in-project Browser / Pinned / Sessions kind
- * disclosures keep desktop semantics (default expanded, presence = collapsed).
+ * groups are persisted per machine (AsyncStorage, v2 key); the in-project
+ * Browser / Pinned / Sessions kind disclosures keep desktop semantics (default
+ * expanded, presence = collapsed). A saved `collapsedSessionLists` entry from
+ * the retired 6-row "Show more" collapse is ignored.
  * Machine-section collapse stays in-memory only.
  */
 
@@ -18,7 +19,6 @@ type PersistedMachineDisclosure = {
   expandedProjects: string[];
   expandedCollections: string[];
   expandedGroups: string[];
-  collapsedSessionLists: string[];
   /** Collapsed "Quick"/"Projects" section labels (default expanded). */
   collapsedSections?: string[];
   /** Collapsed in-project Browser/Pinned/Sessions labels (default expanded). */
@@ -48,8 +48,6 @@ type CollapseState = {
   expandedCollectionsByMachine: Record<string, string[]>;
   /** Persisted per machine: expanded named-group collapse keys. */
   expandedGroupsByMachine: Record<string, string[]>;
-  /** Persisted per machine: flat projects collapsed to 6 rows ("Show more"). */
-  collapsedSessionListsByMachine: Record<string, string[]>;
   /** Persisted per machine: collapsed 'quick'/'projects' section labels. */
   collapsedSectionsByMachine: Record<string, string[]>;
   /** Persisted per machine: collapsed in-project kind-disclosure keys. */
@@ -75,7 +73,6 @@ type CollapseState = {
   toggleProject: (machineId: string, projectKey: string) => void;
   toggleCollection: (machineId: string, collectionId: string) => void;
   toggleGroup: (machineId: string, groupCollapseKey: string) => void;
-  toggleSessionList: (machineId: string, projectKey: string) => void;
   toggleSection: (machineId: string, section: 'quick' | 'projects') => void;
   toggleSessionKind: (machineId: string, kindCollapseKey: string) => void;
   toggleCoordinator: (machineId: string, coordinatorKey: string) => void;
@@ -92,7 +89,6 @@ export const useCollapseStore = create<CollapseState>()((set, get) => {
       expandedProjectsByMachine,
       expandedCollectionsByMachine,
       expandedGroupsByMachine,
-      collapsedSessionListsByMachine,
       collapsedSectionsByMachine,
       collapsedSessionKindsByMachine,
       collapsedCoordinatorsByMachine,
@@ -103,7 +99,6 @@ export const useCollapseStore = create<CollapseState>()((set, get) => {
       ...Object.keys(expandedProjectsByMachine),
       ...Object.keys(expandedCollectionsByMachine),
       ...Object.keys(expandedGroupsByMachine),
-      ...Object.keys(collapsedSessionListsByMachine),
       ...Object.keys(collapsedSectionsByMachine),
       ...Object.keys(collapsedSessionKindsByMachine),
       ...Object.keys(collapsedCoordinatorsByMachine),
@@ -114,7 +109,6 @@ export const useCollapseStore = create<CollapseState>()((set, get) => {
         expandedProjects: expandedProjectsByMachine[machineId] ?? [],
         expandedCollections: expandedCollectionsByMachine[machineId] ?? [],
         expandedGroups: expandedGroupsByMachine[machineId] ?? [],
-        collapsedSessionLists: collapsedSessionListsByMachine[machineId] ?? [],
         collapsedSections: collapsedSectionsByMachine[machineId] ?? [],
         collapsedSessionKinds: collapsedSessionKindsByMachine[machineId] ?? [],
         collapsedCoordinators: collapsedCoordinatorsByMachine[machineId] ?? [],
@@ -129,7 +123,6 @@ export const useCollapseStore = create<CollapseState>()((set, get) => {
       | 'expandedProjectsByMachine'
       | 'expandedCollectionsByMachine'
       | 'expandedGroupsByMachine'
-      | 'collapsedSessionListsByMachine'
       | 'collapsedSectionsByMachine'
       | 'collapsedSessionKindsByMachine'
       | 'collapsedCoordinatorsByMachine'
@@ -152,7 +145,6 @@ export const useCollapseStore = create<CollapseState>()((set, get) => {
     expandedProjectsByMachine: {},
     expandedCollectionsByMachine: {},
     expandedGroupsByMachine: {},
-    collapsedSessionListsByMachine: {},
     collapsedSectionsByMachine: {},
     collapsedSessionKindsByMachine: {},
     collapsedCoordinatorsByMachine: {},
@@ -166,7 +158,6 @@ export const useCollapseStore = create<CollapseState>()((set, get) => {
       let expandedProjects: Record<string, string[]> = {};
       let expandedCollections: Record<string, string[]> = {};
       let expandedGroups: Record<string, string[]> = {};
-      let collapsedSessionLists: Record<string, string[]> = {};
       let collapsedSections: Record<string, string[]> = {};
       let collapsedSessionKinds: Record<string, string[]> = {};
       let collapsedCoordinators: Record<string, string[]> = {};
@@ -188,10 +179,6 @@ export const useCollapseStore = create<CollapseState>()((set, get) => {
                 [machineId]: stringArray(record.expandedCollections),
               };
               expandedGroups = { ...expandedGroups, [machineId]: stringArray(record.expandedGroups) };
-              collapsedSessionLists = {
-                ...collapsedSessionLists,
-                [machineId]: stringArray(record.collapsedSessionLists),
-              };
               collapsedSections = {
                 ...collapsedSections,
                 [machineId]: stringArray(record.collapsedSections),
@@ -219,7 +206,6 @@ export const useCollapseStore = create<CollapseState>()((set, get) => {
         expandedProjectsByMachine: expandedProjects,
         expandedCollectionsByMachine: expandedCollections,
         expandedGroupsByMachine: expandedGroups,
-        collapsedSessionListsByMachine: collapsedSessionLists,
         collapsedSectionsByMachine: collapsedSections,
         collapsedSessionKindsByMachine: collapsedSessionKinds,
         collapsedCoordinatorsByMachine: collapsedCoordinators,
@@ -235,9 +221,6 @@ export const useCollapseStore = create<CollapseState>()((set, get) => {
 
     toggleGroup: (machineId, groupCollapseKey) =>
       toggleIn('expandedGroupsByMachine', machineId, groupCollapseKey),
-
-    toggleSessionList: (machineId, projectKey) =>
-      toggleIn('collapsedSessionListsByMachine', machineId, projectKey),
 
     toggleSection: (machineId, section) =>
       toggleIn('collapsedSectionsByMachine', machineId, section),

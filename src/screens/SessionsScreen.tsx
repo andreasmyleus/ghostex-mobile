@@ -370,7 +370,6 @@ export default function SessionsScreen({ navigation }: Props) {
           expandedProjectsByMachine: collapse.expandedProjectsByMachine,
           expandedCollectionsByMachine: collapse.expandedCollectionsByMachine,
           expandedGroupsByMachine: collapse.expandedGroupsByMachine,
-          collapsedSessionListsByMachine: collapse.collapsedSessionListsByMachine,
           collapsedSectionsByMachine: collapse.collapsedSectionsByMachine,
           collapsedSessionKindsByMachine: collapse.collapsedSessionKindsByMachine,
           collapsedCoordinatorsByMachine: collapse.collapsedCoordinatorsByMachine,
@@ -388,7 +387,6 @@ export default function SessionsScreen({ navigation }: Props) {
       collapse.expandedProjectsByMachine,
       collapse.expandedCollectionsByMachine,
       collapse.expandedGroupsByMachine,
-      collapse.collapsedSessionListsByMachine,
       collapse.collapsedSectionsByMachine,
       collapse.collapsedSessionKindsByMachine,
       collapse.collapsedCoordinatorsByMachine,
@@ -884,7 +882,7 @@ export default function SessionsScreen({ navigation }: Props) {
   // Rendering.
   // -------------------------------------------------------------------------
 
-  /** Rows nested inside a project card (sessions, groups, empty, Show more). */
+  /** Rows nested inside a project card (sessions, groups, empty, older threads). */
   const renderChildItem = (
     target: MachineRecord | null,
     machineId: string,
@@ -962,15 +960,6 @@ export default function SessionsScreen({ navigation }: Props) {
                   }
                 : undefined
             }
-          />
-        );
-      case 'SESSION_LIST_TOGGLE':
-        return (
-          <SessionListToggleRow
-            key={child.key}
-            label={child.label}
-            quick={false}
-            onPress={() => collapse.toggleSessionList(machineId, child.projectKey)}
           />
         );
       case 'COORDINATOR_OLDER':
@@ -1243,14 +1232,6 @@ export default function SessionsScreen({ navigation }: Props) {
           />
         );
       }
-      case 'SESSION_LIST_TOGGLE':
-        return (
-          <SessionListToggleRow
-            label={item.label}
-            quick
-            onPress={() => collapse.toggleSessionList(block.machineId, item.projectKey)}
-          />
-        );
       default:
         return null;
     }

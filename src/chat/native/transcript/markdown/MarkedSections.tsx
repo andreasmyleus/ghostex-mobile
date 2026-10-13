@@ -70,14 +70,12 @@ type SectionProps = {
   rest: ReactNode;
   /** The label, as inline text: a marked heading's label is the whole heading, links and code spans included (styles C and D). */
   label: ReactNode;
-  /** The rest of the first line, as inline text (styles C and D). */
-  lead: ReactNode;
   /** The first line without its emoji, drawn as written (the thin rule with emojis off). */
   first: ReactNode;
   selectable: boolean;
 };
 
-export function MarkedSection({ meta, style, emoji, theme, color, all, rest, label: labelText, lead, first, selectable }: SectionProps) {
+export function MarkedSection({ meta, style, emoji, theme, color, all, rest, label: labelText, first, selectable }: SectionProps) {
   if (style === 'plain') return <View>{all}</View>;
   const accent = kindColor(meta.kind, theme.light);
   if (style === 'rule') {
@@ -94,7 +92,7 @@ export function MarkedSection({ meta, style, emoji, theme, color, all, rest, lab
       </View>
     );
   }
-  const hasLead = meta.lead.length > 0;
+  // The label stands alone on its line: the core moves whatever followed it into `rest`, under it.
   if (style === 'badge') {
     const { fill, edge } = tint(theme);
     const label = meta.label.length > 0 && !meta.labelRepeats ? meta.label : '';
@@ -108,11 +106,9 @@ export function MarkedSection({ meta, style, emoji, theme, color, all, rest, lab
               <Text style={[styles.badgeText, { color: accent }]}>{meta.name.toUpperCase()}</Text>
             </View>
           </View>
-          {label.length > 0 || hasLead ? (
-            <Text selectable={selectable} style={[styles.prose, styles.badgeLead, { color }]}>
-              {label.length > 0 ? <Text style={[styles.label, { color: theme.foreground }]}>{labelText}</Text> : null}
-              {label.length > 0 && hasLead ? ' ' : null}
-              {hasLead ? lead : null}
+          {label.length > 0 ? (
+            <Text selectable={selectable} style={[styles.prose, styles.badgeLead, styles.label, { color: theme.foreground }]}>
+              {labelText}
             </Text>
           ) : null}
         </View>
@@ -129,8 +125,6 @@ export function MarkedSection({ meta, style, emoji, theme, color, all, rest, lab
       <Text selectable={selectable} style={[styles.prose, { color }]}>
         {emoji ? `${meta.emoji} ` : null}
         {hasLabel ? <Text style={[styles.label, { color: accent }]}>{label}</Text> : null}
-        {hasLabel && hasLead ? ' ' : null}
-        {hasLead ? lead : null}
       </Text>
       {rest}
     </View>

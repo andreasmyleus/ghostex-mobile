@@ -150,9 +150,8 @@ export type SummaryItem = {
   active: boolean;
   /** The running turn's rows behind its "Active work" fold. */
   work: ProjectedMessage[];
-  /** While the turn runs: the agent's newest message and the row it is on now, drawn under the fold
-   * so the work stays in view (gx-chat-core `live_work` in `transcript/turns.rs`). */
-  live?: ProjectedMessage[];
+  /** The running turn's "Active work" fold starts open (gx-chat-core `summary_mode_turns`). */
+  workOpen?: boolean;
   /** What ended a turn the agent wrote no reply to: a slash command's output ("Set effort level to
    * High") or the "Interrupted" marker. Drawn under the prompt without a fold. */
   outcome?: ProjectedMessage[];
@@ -279,15 +278,16 @@ export type ProjectedMessage = {
   /** "N tool calls" in simple mode. */
   simpleToolLabel?: string;
   /** Tool call rows: `{name, glyph, preview, failed, status: 'done' | 'failed' | 'running',
-   * failure, duration, hasCall, hasDetail, exchange, sentMessage, subagent}`; `failure` is what a
-   * failed call reported and `duration` how long it ran ("14.3s"), each empty when unknown.
+   * failure, duration, description, hasCall, hasDetail, exchange, sentMessage, subagent}`; `failure`
+   * is what a failed call reported, `duration` how long it ran ("14.3s") and `description` the line
+   * the agent gave the call (Simple mode shows it in place of `name`), each empty when unknown.
    * Desktop: `tool_run.rs`, `terminal_tool_row.rs`. */
   tools?: Json[];
   /** How the tool rows fold. Desktop: `tool_run.rs`. */
   toolFold?: Json;
   /** Whether every tool row shows without a "show more". */
   toolsShowAllRows?: boolean;
-  /** A running summary turn's live row: its tool calls start open (gx-chat-core `live_work` in `transcript/turns.rs`). */
+  /** A running summary turn's newest row: its tool calls start open (gx-chat-core `summary_mode_turns` in `transcript/turns.rs`). */
   toolsOpen?: boolean;
   /** The live terminal tool row synthesized from the agent's screen. Desktop: `terminal_tool_row.rs`. */
   terminalTool?: Json;

@@ -180,7 +180,9 @@ const ToolRow = memo(function ToolRow({
   const expanded = open && hasDetail;
   const detail = obj(useRowDetail(key, 'tool', messageId, index, expanded));
   const failed = tool.failed === true;
-  const name = str(tool, 'name');
+  // Simple mode names the call by the description the agent gave it, when it gave one (gx-chat-core `tool_description`).
+  const description = str(tool, 'description');
+  const name = simple && description.length > 0 ? description : str(tool, 'name');
   const failure = str(tool, 'failure');
   const duration = str(tool, 'duration');
   const status = str(tool, 'status');

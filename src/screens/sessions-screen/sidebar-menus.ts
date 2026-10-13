@@ -28,6 +28,7 @@ import {
   type GhostexSession,
 } from '../../contract/mobileSummary';
 import { COMMAND_ICONS } from '../../assets/tablerIcons.generated';
+import { hasBackgroundWork, hasPendingQuestion } from '../../components/sessions/sessionStatus';
 import type { SessionWorkLinks, WorkLinkKind } from '../../commands/ghostexCli';
 import { effectiveSessionTag, SESSION_TAG_SECTIONS } from '../../contract/sessionTags';
 import { COORDINATOR_AGENT_ICONS, FORK_AGENT_ICONS } from '../../sessions/sessionCommands';
@@ -747,7 +748,14 @@ export function buildSessionMenu(input: SessionMenuInput): SidebarMenuItem[] {
   if (below.length > 0) {
     advanced.push(separator());
     advanced.push(heading('Below'));
-    const sleepable = below.filter(isRunningSession).map((entry) => entry.sessionId);
+    /**
+     * CDXC:SessionSleep 2026-10-01 DECISION: User: "please don't sleep terminal sessions that have shell running or a question status", and Sleep Below is a bulk sweep too, so it skips rows with the grey shell-running dot or an unanswered question (the desktop's gx-core sidebar_menu/session.rs `full_menu`).
+     */
+    const sleepable = below
+      .filter(
+        (entry) => isRunningSession(entry) && !hasBackgroundWork(entry) && !hasPendingQuestion(entry),
+      )
+      .map((entry) => entry.sessionId);
     if (sleepable.length > 0) {
       advanced.push(
         row(

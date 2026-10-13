@@ -57,6 +57,9 @@ import {
   exportSessionTranscriptCommand,
   forkSessionCommand,
   promoteCoordinatorCommand,
+  coordinatorEditCommand,
+  coordinatorResolveCommand,
+  coordinatorStatusCommand,
   sleepInactiveCoordinatorThreadsCommand,
   moveProjectCommand,
   removeProjectCommand,
@@ -115,6 +118,11 @@ import {
   type SessionContext,
 } from './session-actions';
 import { parseCoordinatorOptions, type CoordinatorOptions } from './NewCoordinatorSheet';
+import {
+  parseCoordinatorDetails,
+  type CoordinatorDetails,
+  type CoordinatorDetailsEdit,
+} from './CoordinatorDetailsSheet';
 import { parseWorkLinkCandidates, type WorkLinkCandidates } from './work-link-picker';
 import { sidebarMenuView } from './sidebar-menu-view';
 import {
@@ -375,6 +383,36 @@ export function useSessionsScreenMenus({
     }
   };
 
+  /** Mark Thread Done / Reopen Thread: gxserver resolves the thread, closing or waking its session. */
+  const resolveCoordinatorThread = async (
+    machine: MachineRecord,
+    session: GhostexSession,
+    resolved: boolean,
+  ): Promise<void> => {
+    setProgress(resolved ? 'Marking the thread done…' : 'Reopening the thread…');
+    try {
+      await runGhostexCli(machine, coordinatorResolveCommand(session.globalRef, resolved));
+      setTransientStatus(resolved ? 'Thread marked done' : 'Thread reopened');
+    } catch (error) {
+      setTransientStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setProgress(null);
+    }
+  };
+
+  /** What the Goal & Instructions and Memory editors start from (`ghostex coordinator status`). */
+  const loadCoordinatorDetails = async (ctx: SessionContext): Promise<CoordinatorDetails> => {
+    const { json } = await runGhostexCli(ctx.machine, coordinatorStatusCommand(ctx.item.session.globalRef));
+    return parseCoordinatorDetails(json);
+  };
+
+  /** Saves an editor's copy in one `ghostex coordinator edit`; a failure stays in the open sheet. */
+  const saveCoordinatorDetails = async (ctx: SessionContext, edit: CoordinatorDetailsEdit): Promise<void> => {
+    await runGhostexCli(ctx.machine, coordinatorEditCommand(ctx.item.session.globalRef, edit));
+    setOverlay(NONE);
+    setTransientStatus('Orchestrator updated');
+  };
+
   /** The Link to picker's suggestions for `query` (`ghostex link-session --candidates`). */
   const loadWorkLinkCandidates = async (
     ctx: SessionContext,
@@ -592,6 +630,17 @@ export function useSessionsScreenMenus({
           else if (menuCommand.action === 'linkWork') {
             setOverlay({ kind: 'workLinkPicker', ctx, linkKind: menuCommand.kind });
           } else setOverlay({ kind: 'delayedSend', ctx });
+          return;
+        }
+        case 'coordinatorSessionAction': {
+          const ctx = scope.session;
+          if (ctx === undefined) throw new Error('An orchestrator action needs a session.');
+          if (menuCommand.action === 'goal' || menuCommand.action === 'memory') {
+            setOverlay({ kind: 'coordinatorDetails', ctx, mode: menuCommand.action });
+            return;
+          }
+          setOverlay(NONE);
+          void resolveCoordinatorThread(machine, ctx.item.session, menuCommand.action === 'markDone');
           return;
         }
         case 'projectMembership': {
@@ -1485,6 +1534,8 @@ export function useSessionsScreenMenus({
     agentMenuItems,
     createCoordinator,
     loadCoordinatorOptions,
+    loadCoordinatorDetails,
+    saveCoordinatorDetails,
     actionsMenuItems,
     recoveryItems,
   };

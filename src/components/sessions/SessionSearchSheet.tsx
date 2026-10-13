@@ -1,17 +1,19 @@
 /**
  * Session search: the phone's counterpart of the desktop's Sessions search
  * (Quick Access, Sessions tab). A panel over the Sessions list with an
- * autofocused field and the matching sessions of every visible computer,
- * newest first under day headings; each row shows the session's tag or agent
- * glyph, its title, its project, how long ago it was used, and a dot that is
- * lit while it is awake. Tapping a row (or the keyboard's search key, which
- * opens the first row, as Enter does on the desktop) opens the session the way
- * tapping it in the list does. The matching rules live in
- * src/sessions/sessionSearch.ts.
+ * autofocused field and the matching sessions of every visible computer, open
+ * and closed, newest first under day headings; each row shows the session's
+ * tag or agent glyph, its title, its project, how long ago it was used (or
+ * closed), and a dot: lit while awake, dim while asleep, a ring when closed.
+ * Tapping an open row (or the keyboard's search key, which opens the first
+ * row, as Enter does on the desktop) opens it the way tapping it in the list
+ * does; tapping a closed row brings it back on its computer first. The
+ * matching rules live in src/sessions/sessionSearch.ts.
  */
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   SectionList,
@@ -32,11 +34,13 @@ import { resolveSessionTag } from '../../contract/sessionTags';
 import { SessionCopy, SessionSearchCopy } from '../../copy';
 import { useInventoryStore } from '../../inventory/store';
 import { machineDisplayLabel, type MachineRecord } from '../../machines/store';
+import { fetchClosedSessions } from '../../sessions/closedSessions';
 import {
   searchSessions,
   sessionSearchRelativeTime,
-  type SessionSearchCandidate,
+  type ClosedSession,
   type SessionSearchRow,
+  type SessionSearchSource,
 } from '../../sessions/sessionSearch';
 import { GhostexStrokeWidth, SetupPalette } from '../../theme/palette';
 import { useKeyboardTop } from '../common/keyboard/keyboardFrame';
@@ -48,6 +52,8 @@ export type SessionSearchSheetProps = {
   /** The computers the Sessions list shows (hidden ones are never searched). */
   machines: readonly MachineRecord[];
   onOpen: (machine: MachineRecord, session: GhostexSession) => void;
+  /** Bring a closed session back and open it; rejects with the message to show when it cannot. */
+  onRestore: (machine: MachineRecord, session: ClosedSession) => Promise<void>;
   onClose: () => void;
 };
 
@@ -56,11 +62,14 @@ const ROW_SELECTED = 'rgba(255,255,255,0.075)';
 const GLYPH_TILE = 'rgba(255,255,255,0.07)';
 const STATUS_DOT = 'rgba(255,255,255,0.20)';
 const STATUS_DOT_OPEN = '#FFFFFF';
+/** Each keystroke would be an SSH round trip per computer; wait for a pause in typing. */
+const CLOSED_QUERY_DEBOUNCE_MS = 300;
 
 export default function SessionSearchSheet({
   visible,
   machines,
   onOpen,
+  onRestore,
   onClose,
 }: SessionSearchSheetProps) {
   const insets = useSafeAreaInsets();
@@ -69,65 +78,137 @@ export default function SessionSearchSheet({
   const inventoriesByMachineId = useInventoryStore((state) => state.inventoriesByMachineId);
   // The navigation bar's inset is under the keyboard while it is open; the panel ends right on top of it.
   const bottomInset = useKeyboardTop() === null ? insets.bottom : 0;
+  const [closedByMachine, setClosedByMachine] = useState<Record<string, ClosedSession[]>>({});
+  const [closedLoading, setClosedLoading] = useState(false);
+  const [closedFailures, setClosedFailures] = useState<string[]>([]);
+  const [restoringKey, setRestoringKey] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const closedGeneration = useRef(0);
 
-  const candidates = useMemo((): SessionSearchCandidate[] => {
-    // The sheet stays mounted under the list; the 5s inventory poll need not rebuild results nobody sees.
-    if (!visible) return [];
-    const reporting = machines.filter(
-      (machine) => inventoriesByMachineId[machine.id]?.summary != null,
-    );
+  // The computers that answered the inventory: only those can be reached for closed sessions too.
+  const reporting = useMemo(
+    () =>
+      visible ? machines.filter((machine) => inventoriesByMachineId[machine.id]?.summary != null) : [],
+    [visible, machines, inventoriesByMachineId],
+  );
+  const reportingIds = reporting.map((machine) => machine.id).join('\n');
+
+  useEffect(() => {
+    if (!visible) {
+      closedGeneration.current += 1;
+      setClosedByMachine({});
+      setClosedFailures([]);
+      setClosedLoading(false);
+      return undefined;
+    }
+    const generation = ++closedGeneration.current;
+    setClosedLoading(true);
+    const timer = setTimeout(() => {
+      const nowMs = Date.now();
+      void Promise.all(
+        reporting.map(async (machine) => {
+          try {
+            return { machine, sessions: await fetchClosedSessions(machine, query, nowMs) };
+          } catch {
+            return { machine, sessions: null };
+          }
+        }),
+      ).then((answers) => {
+        if (generation !== closedGeneration.current) return;
+        const next: Record<string, ClosedSession[]> = {};
+        const failures: string[] = [];
+        for (const { machine, sessions } of answers) {
+          if (sessions === null) failures.push(machineDisplayLabel(machine));
+          else next[machine.id] = sessions;
+        }
+        setClosedByMachine(next);
+        setClosedFailures(failures);
+        setClosedLoading(false);
+      });
+    }, CLOSED_QUERY_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+    // `reporting` changes on every inventory poll; refetch only when the computers or the query change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, query, reportingIds]);
+
+  const sources = useMemo((): SessionSearchSource[] => {
+    // The phone lists one computer at a time, so a result names its computer once there are several.
+    const nameMachines = reporting.length > 1;
     return reporting.flatMap((machine) => {
       const summary = inventoriesByMachineId[machine.id]?.summary;
       if (summary == null) return [];
       const chatProjectIds = new Set(
         summary.projects.filter((project) => project.isChat === true).map((project) => project.projectId),
       );
-      return summary.sessions.map((session) => {
-        const project = chatProjectIds.has(session.projectId)
-          ? SessionCopy.chatsTitle
-          : session.projectName.trim();
-        // The phone lists one computer at a time, so a result names its computer once there are several.
-        const projectLabel =
-          reporting.length > 1
-            ? [project, machineDisplayLabel(machine)].filter((part) => part.length > 0).join(' · ')
-            : project;
-        return {
+      return [
+        {
           machineId: machine.id,
-          session,
-          projectLabel,
+          machineLabel: nameMachines ? machineDisplayLabel(machine) : '',
           customSessionTags: summary.customSessionTags,
-        };
-      });
+          open: summary.sessions.map((session) => ({
+            session,
+            projectLabel: chatProjectIds.has(session.projectId)
+              ? SessionCopy.chatsTitle
+              : session.projectName.trim(),
+          })),
+          closed: closedByMachine[machine.id] ?? [],
+        },
+      ];
     });
-  }, [visible, machines, inventoriesByMachineId]);
+  }, [reporting, inventoriesByMachineId, closedByMachine]);
 
-  const groups = useMemo(() => searchSessions(candidates, query), [candidates, query]);
+  const nowMs = Date.now();
+  const groups = useMemo(() => searchSessions(sources, query, Date.now()), [sources, query]);
   const sections = useMemo(
     () => groups.map((group) => ({ title: group.heading, data: group.rows })),
     [groups],
   );
   const firstKey = groups[0]?.rows[0]?.key;
-  const nowMs = Date.now();
 
   const close = (): void => {
+    if (restoringKey !== null) return;
     setQuery('');
+    setRestoreError(null);
     onClose();
   };
 
   const open = (row: SessionSearchRow): void => {
+    if (restoringKey !== null) return;
     const machine = machines.find((entry) => entry.id === row.machineId);
     if (machine === undefined) return;
-    setQuery('');
-    onOpen(machine, row.session);
+    if (row.kind === 'open') {
+      setQuery('');
+      setRestoreError(null);
+      onOpen(machine, row.session);
+      return;
+    }
+    if (!row.closed.isRestorable) {
+      setRestoreError(
+        row.closed.restoreUnavailableReason.length > 0
+          ? row.closed.restoreUnavailableReason
+          : SessionSearchCopy.notRestorable,
+      );
+      return;
+    }
+    setRestoreError(null);
+    setRestoringKey(row.key);
+    void onRestore(machine, row.closed).then(
+      () => {
+        setRestoringKey(null);
+        setQuery('');
+      },
+      (error: unknown) => {
+        setRestoringKey(null);
+        setRestoreError(
+          SessionSearchCopy.restoreFailed(error instanceof Error ? error.message : String(error)),
+        );
+      },
+    );
   };
 
   const renderRow = ({ item }: { item: SessionSearchRow }) => {
-    const { session } = item;
-    const tag = resolveSessionTag(session, item.customSessionTags);
-    const iconId = resolveAgentIconId(
-      session.agentIcon,
-      session.agentName.length > 0 ? session.agentName : session.agent,
-    );
+    const tag = resolveSessionTag(item, item.customSessionTags);
+    const iconId = resolveAgentIconId(item.agentIcon, item.agentName);
     const AgentIcon = AGENT_ICONS[iconId] ?? AGENT_ICONS.terminal;
     // quick_access/sessions.rs `session_icon`: the tag, then the agent's colored logo, then the terminal glyph in a tile.
     const glyph =
@@ -145,15 +226,22 @@ export default function SessionSearchSheet({
         </View>
       );
     const time = sessionSearchRelativeTime(item.timestamp, nowMs);
+    const closed = item.kind === 'closed';
+    const restoring = restoringKey === item.key;
+    const label = [item.title, item.projectLabel, closed ? SessionSearchCopy.closedLabel : '']
+      .filter((part) => part.length > 0)
+      .join(', ');
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={
-          item.projectLabel.length > 0 ? `${item.title}, ${item.projectLabel}` : item.title
-        }
+        accessibilityLabel={label}
+        accessibilityState={{ busy: restoring, disabled: closed && !item.closed.isRestorable }}
         style={({ pressed }) => [
           styles.row,
-          pressed || item.key === firstKey ? styles.rowSelected : null,
+          pressed || restoring || (restoringKey === null && item.key === firstKey)
+            ? styles.rowSelected
+            : null,
+          closed && !item.closed.isRestorable ? styles.rowUnavailable : null,
         ]}
         onPress={() => open(item)}
       >
@@ -168,16 +256,38 @@ export default function SessionSearchSheet({
             </Text>
           ) : null}
         </View>
-        {time.length > 0 ? <Text style={styles.rowTime}>{time}</Text> : null}
-        <View
-          style={[
-            styles.statusDot,
-            { backgroundColor: session.isSleeping ? STATUS_DOT : STATUS_DOT_OPEN },
-          ]}
-        />
+        {restoring ? (
+          <>
+            <Text style={styles.rowTime}>{SessionSearchCopy.restoring}</Text>
+            <ActivityIndicator size="small" color={SetupPalette.MUTED} />
+          </>
+        ) : (
+          <>
+            {time.length > 0 ? <Text style={styles.rowTime}>{time}</Text> : null}
+            <View
+              style={
+                item.kind === 'closed'
+                  ? [styles.statusDot, styles.statusDotClosed]
+                  : [
+                      styles.statusDot,
+                      { backgroundColor: item.session.isSleeping ? STATUS_DOT : STATUS_DOT_OPEN },
+                    ]
+              }
+            />
+          </>
+        )}
       </Pressable>
     );
   };
+
+  const footer =
+    closedLoading || closedFailures.length > 0 ? (
+      <Text style={styles.footer}>
+        {closedLoading
+          ? SessionSearchCopy.loadingClosed
+          : SessionSearchCopy.closedUnavailable(closedFailures.join(', '))}
+      </Text>
+    ) : null;
 
   return (
     <Modal
@@ -212,7 +322,11 @@ export default function SessionSearchSheet({
                 ref={inputRef}
                 autoFocus
                 value={query}
-                onChangeText={setQuery}
+                onChangeText={(next) => {
+                  setQuery(next);
+                  setRestoreError(null);
+                }}
+                editable={restoringKey === null}
                 placeholder={SessionSearchCopy.placeholder}
                 placeholderTextColor={SetupPalette.DIM}
                 style={styles.input}
@@ -226,7 +340,7 @@ export default function SessionSearchSheet({
                   if (first !== undefined) open(first);
                 }}
               />
-              {query.length > 0 ? (
+              {query.length > 0 && restoringKey === null ? (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={SessionSearchCopy.clear}
@@ -241,6 +355,11 @@ export default function SessionSearchSheet({
               ) : null}
             </View>
           </View>
+          {restoreError !== null ? (
+            <Text style={styles.error} accessibilityLiveRegion="polite">
+              {restoreError}
+            </Text>
+          ) : null}
           <SectionList
             sections={sections}
             keyExtractor={(row) => row.key}
@@ -256,10 +375,13 @@ export default function SessionSearchSheet({
             style={styles.list}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
-              <Text style={styles.empty}>
-                {query.trim().length > 0 ? SessionSearchCopy.noMatches : SessionSearchCopy.noSessions}
-              </Text>
+              closedLoading ? null : (
+                <Text style={styles.empty}>
+                  {query.trim().length > 0 ? SessionSearchCopy.noMatches : SessionSearchCopy.noSessions}
+                </Text>
+              )
             }
+            ListFooterComponent={footer}
           />
         </View>
       </KeyboardAvoidingContainer>
@@ -388,6 +510,26 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
+  },
+  /** A closed session draws only the ring of the dot: nothing is running for it. */
+  statusDotClosed: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.45)',
+  },
+  rowUnavailable: {
+    opacity: 0.45,
+  },
+  footer: {
+    color: SetupPalette.MUTED,
+    fontSize: 12,
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+  error: {
+    color: SetupPalette.ERROR,
+    fontSize: 13,
+    paddingHorizontal: 14,
+    paddingTop: 10,
   },
   empty: {
     color: SetupPalette.MUTED,

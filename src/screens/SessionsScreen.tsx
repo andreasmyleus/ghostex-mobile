@@ -71,6 +71,7 @@ import SessionRow from '../components/sessions/SessionRow';
 import SessionSearchSheet from '../components/sessions/SessionSearchSheet';
 import DelayedSendDialog from '../components/sessions/DelayedSendDialog';
 import NewCoordinatorSheet from './sessions-screen/NewCoordinatorSheet';
+import CoordinatorDetailsSheet from './sessions-screen/CoordinatorDetailsSheet';
 import WorkLinkPicker from './sessions-screen/work-link-picker';
 import ExportTranscriptSheet from '../components/terminal/ExportTranscriptSheet';
 import { WarningTriangleIcon } from '../components/terminal/icons';
@@ -855,6 +856,8 @@ export default function SessionsScreen({ navigation }: Props) {
     agentMenuItems,
     createCoordinator,
     loadCoordinatorOptions,
+    loadCoordinatorDetails,
+    saveCoordinatorDetails,
     actionsMenuItems,
     recoveryItems,
   } = useSessionsScreenMenus({
@@ -1735,6 +1738,15 @@ export default function SessionsScreen({ navigation }: Props) {
           projectTitle={overlay.ctx.header.title}
           loadOptions={() => loadCoordinatorOptions(overlay.ctx)}
           onCreate={(input) => createCoordinator(overlay.ctx, input)}
+          onCancel={() => setOverlay(NONE)}
+        />
+      ) : null}
+
+      {overlay.kind === 'coordinatorDetails' ? (
+        <CoordinatorDetailsSheet
+          mode={overlay.mode}
+          load={() => loadCoordinatorDetails(overlay.ctx)}
+          onSave={(edit) => saveCoordinatorDetails(overlay.ctx, edit)}
           onCancel={() => setOverlay(NONE)}
         />
       ) : null}

@@ -53,6 +53,8 @@ export type Overlay =
   /** The Link to picker for one kind of work link. */
   | { kind: 'workLinkPicker'; ctx: SessionContext; linkKind: WorkLinkKind }
   | { kind: 'delayedSend'; ctx: SessionContext }
+  /** An orchestrator's Goal & Instructions or Memory editor (./CoordinatorDetailsSheet.tsx). */
+  | { kind: 'coordinatorDetails'; ctx: SessionContext; mode: 'goal' | 'memory' }
   | { kind: 'closeConfirm'; ctx: SessionContext }
   /** Handoff / Export's result: the exported path and the follow-up conversation. */
   | { kind: 'exportedTranscript'; exported: ExportedTranscript; projectTitle: string }

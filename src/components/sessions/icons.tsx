@@ -302,6 +302,36 @@ export function CrewGlyph({ size, color }: GlyphProps) {
   );
 }
 
+/** Circle check (Tabler IconCircleCheck): Mark Thread Done. */
+export function CircleCheckGlyph({ size, color }: GlyphProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0 M9 12l2 2l4 -4"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Rotate clockwise (Tabler IconRotateClockwise): Reopen Thread. */
+export function RotateClockwiseGlyph({ size, color }: GlyphProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4.05 11a8 8 0 1 1 .5 4m-.5 5v-5h5"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 /** X cross (desktop IconX, Close/Kill rows). */
 export function XGlyph({ size, color }: GlyphProps) {
   return (

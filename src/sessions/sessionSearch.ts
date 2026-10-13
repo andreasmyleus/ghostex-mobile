@@ -3,7 +3,7 @@
  * which day heading, as the desktop Quick Access Sessions tab decides it.
  *
  * CDXC:Sessions 2026-09-30 SEE-ALSO:
- * Port of the desktop's session search rules in packages/gx-core/src/quick_access/sessions.rs (`filter_sessions`, `normalize_search_value`, `matches_token`, `visible_items`, `session_groups`) and packages/gx-core/src/quick_access/session_titles.rs (`is_default_session_search_title`), themselves ported from packages/core-ui/previous-session-search.ts. The phone reaches gx-chat-core through UniFFI but not gx-core, so the rules are mirrored here: a change to how the desktop matches, filters, orders or groups sessions changes this file in the same commit. The mobile summary carries no session `detail`, so that one search field is absent on the phone.
+ * Port of the desktop's session search rules in packages/gx-core/src/quick_access/sessions.rs (`filter_sessions`, `normalize_search_value`, `matches_token`, `visible_items`, `session_groups`) and packages/gx-core/src/quick_access/session_titles.rs (`is_default_session_search_title`), themselves ported from packages/core-ui/previous-session-search.ts. The phone reaches gx-chat-core through UniFFI but not gx-core, so the rules are mirrored here: a change to how the desktop matches, filters, orders or groups sessions changes this file in the same commit. The mobile summary carries no session `detail`, so that one search field is absent on the phone. Closed sessions come from the computer's `ghostex previous-sessions` (server/src/ghostex_cli/previous_sessions.rs, over `/api/listPreviousSessions`) and go through `filter_previous` and `dedupe_previous` here, as the desktop's do.
  */
 
 import { effectiveSessionTag, resolveSessionTag } from '../contract/sessionTags';
@@ -225,46 +225,213 @@ export function isDefaultSessionSearchTitle(title: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Rows and day groups (visible_items / session_groups).
+// The fields a search reads from an open or a closed session (`SessionFields`).
 // ---------------------------------------------------------------------------
 
+type SearchFields = {
+  alias: string;
+  displayTitle: string;
+  primaryTitle: string;
+  terminalTitle: string;
+  sessionTag: string;
+  isFavorite: boolean;
+};
+
 /** `card_title`: the first non-empty of the display, primary and terminal titles, else the alias. */
-export function sessionSearchTitle(session: GhostexSession): string {
-  for (const value of [session.displayTitle, session.primaryTitle, session.terminalTitle, session.title]) {
+function cardTitle(fields: SearchFields): string {
+  for (const value of [fields.displayTitle, fields.primaryTitle, fields.terminalTitle]) {
     const trimmed = value.trim();
     if (trimmed.length > 0) return trimmed;
   }
-  return session.alias;
+  return fields.alias;
 }
 
-function sessionSearchText(session: GhostexSession, catalog: GhostexCustomSessionTags | undefined): string {
-  const tag = effectiveSessionTag(session) === undefined ? undefined : resolveSessionTag(session, catalog);
-  return [
-    session.alias,
-    session.displayTitle,
-    session.primaryTitle,
-    session.terminalTitle,
-    tag?.label,
-  ]
+function searchText(fields: SearchFields, catalog: GhostexCustomSessionTags | undefined): string {
+  const tag = effectiveSessionTag(fields) === undefined ? undefined : resolveSessionTag(fields, catalog);
+  return [fields.alias, fields.displayTitle, fields.primaryTitle, fields.terminalTitle, tag?.label]
     .map((part) => normalizeSessionSearchValue(part))
     .filter((part) => part.length > 0)
     .join(' ');
 }
 
-/** One open session a machine reported, as the search reads it. */
-export type SessionSearchCandidate = {
-  machineId: string;
-  session: GhostexSession;
-  /** The owning project's title (`Chats` for chat projects), shown beside the title. */
-  projectLabel: string;
-  customSessionTags: GhostexCustomSessionTags | undefined;
+/** `filter_sessions`: default titles never match; every query token must. */
+function filterSearchable<T>(
+  items: readonly T[],
+  fieldsOf: (item: T) => SearchFields,
+  query: string,
+  catalog: GhostexCustomSessionTags | undefined,
+): T[] {
+  const tokens = normalizeSessionSearchValue(query)
+    .split(/\s+/)
+    .filter((token) => token.length > 0);
+  return items.filter((item) => {
+    const fields = fieldsOf(item);
+    if (isDefaultSessionSearchTitle(cardTitle(fields))) return false;
+    if (tokens.length === 0) return true;
+    const text = searchText(fields, catalog);
+    return tokens.every((token) => matchesToken(text, token));
+  });
+}
+
+function openFields(session: GhostexSession): SearchFields {
+  return {
+    alias: session.alias,
+    // The summary folds `title` into `displayTitle`; read it too so a row never loses its name.
+    displayTitle: session.displayTitle.length > 0 ? session.displayTitle : session.title,
+    primaryTitle: session.primaryTitle,
+    terminalTitle: session.terminalTitle,
+    sessionTag: session.sessionTag,
+    isFavorite: session.isFavorite,
+  };
+}
+
+export function sessionSearchTitle(session: GhostexSession): string {
+  return cardTitle(openFields(session));
+}
+
+// ---------------------------------------------------------------------------
+// Closed sessions (`ghostex previous-sessions --json`).
+// ---------------------------------------------------------------------------
+
+/** One closed session a computer can bring back, as `ghostex previous-sessions` prints it. */
+export type ClosedSession = {
+  projectId: string;
+  sessionId: string;
+  projectTitle: string;
+  displayTitle: string;
+  primaryTitle: string;
+  terminalTitle: string;
+  title: string;
+  agentIcon: string;
+  agentName: string;
+  sessionTag: string;
+  isFavorite: boolean;
+  closedAt: string;
+  lastActiveAt: string;
+  isRestorable: boolean;
+  restoreUnavailableReason: string;
+  externalSession: boolean;
+  forkBranchCount: number;
 };
 
-export type SessionSearchRow = SessionSearchCandidate & {
-  key: string;
-  title: string;
-  timestamp: number;
+export type ClosedSessionsPage = { sessions: ClosedSession[]; cursor: string | null };
+
+function text(row: Record<string, unknown>, key: string): string {
+  const value = row[key];
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+export function parseClosedSessionsPage(json: Record<string, unknown> | null): ClosedSessionsPage {
+  const results = Array.isArray(json?.results) ? json.results : [];
+  const sessions: ClosedSession[] = [];
+  for (const entry of results) {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) continue;
+    const row = entry as Record<string, unknown>;
+    const projectId = text(row, 'projectId');
+    const sessionId = text(row, 'sessionId');
+    if (projectId.length === 0 || sessionId.length === 0) continue;
+    sessions.push({
+      projectId,
+      sessionId,
+      projectTitle: text(row, 'projectTitle'),
+      displayTitle: text(row, 'displayTitle'),
+      primaryTitle: text(row, 'primaryTitle'),
+      terminalTitle: text(row, 'terminalTitle'),
+      title: text(row, 'title'),
+      agentIcon: text(row, 'agentIcon'),
+      agentName: text(row, 'agentName'),
+      sessionTag: text(row, 'sessionTag'),
+      isFavorite: row.isFavorite === true,
+      closedAt: text(row, 'closedAt'),
+      lastActiveAt: text(row, 'lastActiveAt'),
+      isRestorable: row.isRestorable !== false,
+      restoreUnavailableReason: text(row, 'restoreUnavailableReason'),
+      externalSession: row.externalSession === true,
+      forkBranchCount: typeof row.forkBranchCount === 'number' ? row.forkBranchCount : 0,
+    });
+  }
+  const cursor = typeof json?.cursor === 'string' && json.cursor.length > 0 ? json.cursor : null;
+  return { sessions, cursor };
+}
+
+function closedFields(session: ClosedSession): SearchFields {
+  // The desktop's previous-session item: `alias` is the row's title, `primaryTitle` falls back to it.
+  const title =
+    [session.displayTitle, session.primaryTitle, session.title].find((value) => value.length > 0) ??
+    'Previous Session';
+  return {
+    alias: title,
+    displayTitle: session.displayTitle,
+    primaryTitle: session.primaryTitle.length > 0 ? session.primaryTitle : title,
+    terminalTitle: session.terminalTitle,
+    sessionTag: session.sessionTag,
+    isFavorite: session.isFavorite,
+  };
+}
+
+/** `SESSIONS_VISIBLE_WINDOW_MS`: with no query, closed sessions older than this stay out. */
+export const CLOSED_SESSIONS_VISIBLE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+
+function closedTimestamp(session: ClosedSession): number {
+  return parseTimestamp(session.closedAt);
+}
+
+/** `dedupe_previous`: one row per project and title (forked branches kept apart), the newest closed. */
+function dedupeClosed(sessions: readonly ClosedSession[]): ClosedSession[] {
+  const kept = new Map<string, { index: number; stamp: number }>();
+  sessions.forEach((session, index) => {
+    const historyId = `${session.projectId}:${session.sessionId}`;
+    let key = historyId;
+    if (!session.externalSession) {
+      const project = normalizeSessionSearchValue(session.projectId || session.projectTitle);
+      const scoped = project.length > 0 ? project : `history:${historyId}`;
+      const branch = session.forkBranchCount !== 0 ? `\u0000branch:${session.sessionId}` : '';
+      key = `${scoped}\u0000${normalizeSessionSearchValue(cardTitle(closedFields(session)))}${branch}`;
+    }
+    const closed = closedTimestamp(session);
+    const stamp = closed !== 0 ? closed : parseTimestamp(session.lastActiveAt);
+    const existing = kept.get(key);
+    if (existing !== undefined && existing.stamp >= stamp) return;
+    kept.set(key, { index, stamp });
+  });
+  return [...kept.values()]
+    .map((entry) => entry.index)
+    .sort((left, right) => left - right)
+    .map((index) => sessions[index]);
+}
+
+// ---------------------------------------------------------------------------
+// Rows and day groups (visible_items / session_groups).
+// ---------------------------------------------------------------------------
+
+/** One computer's sessions, as the search reads them. */
+export type SessionSearchSource = {
+  machineId: string;
+  /** Appended to each row's project label when the search spans several computers. */
+  machineLabel: string;
+  customSessionTags: GhostexCustomSessionTags | undefined;
+  /** Open sessions with the project label each shows (`Chats` for chat projects). */
+  open: readonly { session: GhostexSession; projectLabel: string }[];
+  /** Closed sessions the computer reported for this query, newest closed first. */
+  closed: readonly ClosedSession[];
 };
+
+type SessionSearchRowBase = {
+  key: string;
+  machineId: string;
+  title: string;
+  projectLabel: string;
+  timestamp: number;
+  customSessionTags: GhostexCustomSessionTags | undefined;
+  agentIcon: string;
+  agentName: string;
+  sessionTag: string;
+  isFavorite: boolean;
+};
+
+export type SessionSearchRow =
+  | (SessionSearchRowBase & { kind: 'open'; session: GhostexSession })
+  | (SessionSearchRowBase & { kind: 'closed'; closed: ClosedSession });
 
 export type SessionSearchGroup = {
   heading: string;
@@ -311,32 +478,68 @@ export function sessionSearchRelativeTime(timestamp: number, nowMs: number): str
   return `${Math.floor(hours / 24)}d`;
 }
 
+function withMachine(projectLabel: string, machineLabel: string): string {
+  return [projectLabel, machineLabel].filter((part) => part.length > 0).join(' · ');
+}
+
 /**
- * The sessions a query keeps, newest first and grouped by the day they were
- * last used. Every token of the query must match; an empty query keeps every
- * session whose title is not a creation default.
+ * The sessions a query keeps, open and closed, newest first (open by last use,
+ * closed by when they closed) and grouped by day. Every query token must match;
+ * with no query, open sessions named only by a creation default stay out and
+ * closed ones older than two weeks do, as on the desktop.
  */
 export function searchSessions(
-  candidates: readonly SessionSearchCandidate[],
+  sources: readonly SessionSearchSource[],
   query: string,
+  nowMs: number,
 ): SessionSearchGroup[] {
-  const tokens = normalizeSessionSearchValue(query)
-    .split(/\s+/)
-    .filter((token) => token.length > 0);
+  const queryEmpty = query.trim().length === 0;
+  const cutoff = nowMs - CLOSED_SESSIONS_VISIBLE_WINDOW_MS;
   const rows: SessionSearchRow[] = [];
-  for (const candidate of candidates) {
-    const title = sessionSearchTitle(candidate.session);
-    if (isDefaultSessionSearchTitle(title)) continue;
-    if (tokens.length > 0) {
-      const text = sessionSearchText(candidate.session, candidate.customSessionTags);
-      if (!tokens.every((token) => matchesToken(text, token))) continue;
+  for (const source of sources) {
+    const catalog = source.customSessionTags;
+    for (const { session, projectLabel } of filterSearchable(
+      source.open,
+      (entry) => openFields(entry.session),
+      query,
+      catalog,
+    )) {
+      rows.push({
+        kind: 'open',
+        session,
+        key: `open:${source.machineId}:${session.sessionId}`,
+        machineId: source.machineId,
+        title: sessionSearchTitle(session),
+        projectLabel: withMachine(projectLabel, source.machineLabel),
+        timestamp: parseTimestamp(session.lastInteractionAt),
+        customSessionTags: catalog,
+        agentIcon: session.agentIcon,
+        agentName: session.agentName.length > 0 ? session.agentName : session.agent,
+        sessionTag: session.sessionTag,
+        isFavorite: session.isFavorite,
+      });
     }
-    rows.push({
-      ...candidate,
-      key: `open:${candidate.machineId}:${candidate.session.sessionId}`,
-      title,
-      timestamp: parseTimestamp(candidate.session.lastInteractionAt),
-    });
+    // `filter_previous`: no web pages, deduped, then the query; an empty query keeps every title.
+    const deduped = dedupeClosed(source.closed.filter((session) => session.agentIcon !== 'browser'));
+    const matched = queryEmpty ? deduped : filterSearchable(deduped, closedFields, query, catalog);
+    for (const closed of matched) {
+      const timestamp = closedTimestamp(closed);
+      if (queryEmpty && timestamp < cutoff) continue;
+      rows.push({
+        kind: 'closed',
+        closed,
+        key: `closed:${source.machineId}:${closed.projectId}:${closed.sessionId}`,
+        machineId: source.machineId,
+        title: cardTitle(closedFields(closed)),
+        projectLabel: withMachine(closed.projectTitle, source.machineLabel),
+        timestamp,
+        customSessionTags: catalog,
+        agentIcon: closed.agentIcon,
+        agentName: closed.agentName,
+        sessionTag: closed.sessionTag,
+        isFavorite: closed.isFavorite,
+      });
+    }
   }
   rows.sort((left, right) => right.timestamp - left.timestamp || left.key.localeCompare(right.key));
   const groups: SessionSearchGroup[] = [];

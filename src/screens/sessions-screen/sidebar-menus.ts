@@ -69,6 +69,8 @@ export type SidebarMenuCommand =
   | { type: 'sessionAction'; sessionId: string; action: 'rename' | 'note' | 'delayedSend' }
   /** Opens the Link to picker for one kind (gx-core `MenuCommand::link_work`). */
   | { type: 'sessionAction'; sessionId: string; action: 'linkWork'; kind: WorkLinkKind }
+  /** gx-core `MenuCommand::coordinator_session`: an orchestrator's Goal & Instructions / Memory, a thread's Mark Thread Done / Reopen Thread. */
+  | { type: 'coordinatorSessionAction'; sessionId: string; action: 'goal' | 'memory' | 'markDone' | 'reopen' }
   | {
       type: 'projectMembership';
       groupId: string;
@@ -586,6 +588,37 @@ function copySubmenu(session: GhostexSession, project: SessionMenuInput['project
  * message), Generate Title, Move to New Group, and New Tag…; Split Right and Focus act on the
  * computer's own panes.
  */
+/**
+ * gx-core `coordinator_rows` (CDXC:Coordinators 2026-10-13, the user's decision there): an
+ * orchestrator's Goal & Instructions and Memory editors, a thread's Mark Thread Done (disabled
+ * while it works or waits on an answer) or, once done, Reopen Thread, after a separator.
+ */
+function coordinatorRows(session: GhostexSession): SidebarMenuItem[] {
+  if (session.isDraft === true) return [];
+  const id = session.sessionId;
+  const action = (kind: 'goal' | 'memory' | 'markDone' | 'reopen'): SidebarMenuCommand => ({
+    type: 'coordinatorSessionAction',
+    sessionId: id,
+    action: kind,
+  });
+  const rows: SidebarMenuItem[] = [separator()];
+  if (session.isCoordinator) {
+    rows.push(row('Goal & Instructions…', 'checklist', action('goal')));
+    rows.push(row('Memory…', 'brain', action('memory')));
+  } else if (session.coordinatorSessionId.length > 0) {
+    const state = session.coordinatorThreadState;
+    if (state === 'done') {
+      rows.push(row('Reopen Thread', 'rotate-clockwise', action('reopen')));
+    } else {
+      rows.push({
+        ...row('Mark Thread Done', 'circle-check', action('markDone')),
+        disabled: state === 'working' || state === 'waiting',
+      });
+    }
+  }
+  return rows.length === 1 ? [] : rows;
+}
+
 export function buildSessionMenu(input: SessionMenuInput): SidebarMenuItem[] {
   const { session, customTags, below, threads, project } = input;
   const settings = PHONE_MENU_SETTINGS;
@@ -667,9 +700,12 @@ export function buildSessionMenu(input: SessionMenuInput): SidebarMenuItem[] {
     menu.push(action === 'pin' && !pinned ? { ...item, icon: 'pinned' } : item);
   }
 
+  const coordinatorBlock = coordinatorRows(session);
+  menu.push(...coordinatorBlock);
+
   // CDXC:Coordinators 2026-10-13 SEE-ALSO: the user's decision on `is_sleep_inactive_session` in server/src/coordinators/sleep_threads.rs, which decides which threads sleep (gx-core `full_menu` draws the desktop's twin row). The disabled test is only the phone's Sleep Inactive hint, which never greys out a row gxserver would act on.
   if (session.isCoordinator && session.isDraft !== true) {
-    if (menu.length > 0) menu.push(separator());
+    if (coordinatorBlock.length === 0 && menu.length > 0) menu.push(separator());
     menu.push({
       ...row(
         'Sleep Inactive Threads',

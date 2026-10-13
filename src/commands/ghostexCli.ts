@@ -275,6 +275,37 @@ export function sleepInactiveCoordinatorThreadsCommand(globalRef: string): strin
   return `ghostex coordinator sleep-inactive-threads ${shellQuote(requireId(globalRef, 'session reference'))} --json`;
 }
 
+/** An orchestrator's goal, instructions, memory and threads: `ghostex coordinator status --coordinator <ref> --json`. */
+export function coordinatorStatusCommand(globalRef: string): string {
+  return `ghostex coordinator status --coordinator ${shellQuote(requireId(globalRef, 'orchestrator'))} --json`;
+}
+
+/**
+ * Saves an orchestrator's Goal & Instructions or its whole Memory in one call:
+ * `ghostex coordinator edit --coordinator <ref> [--goal=…] [--instructions=…] [--notes-json=…] --json`.
+ */
+export function coordinatorEditCommand(
+  globalRef: string,
+  edit: { goal?: string; instructions?: string; notes?: readonly string[] },
+): string {
+  return (
+    `ghostex coordinator edit --coordinator ${shellQuote(requireId(globalRef, 'orchestrator'))}` +
+    (edit.goal === undefined ? '' : ` --goal=${shellQuote(edit.goal)}`) +
+    (edit.instructions === undefined ? '' : ` --instructions=${shellQuote(edit.instructions)}`) +
+    (edit.notes === undefined ? '' : ` --notes-json=${shellQuote(JSON.stringify(edit.notes))}`) +
+    ' --json'
+  );
+}
+
+/**
+ * Mark Thread Done (closes its session) or Reopen Thread (resumes it):
+ * `ghostex coordinator resolve|reopen <ref> --json`, the verbs the desktop's rows share through
+ * gxserver's `/api/resolveCoordinatorThread`.
+ */
+export function coordinatorResolveCommand(globalRef: string, resolved: boolean): string {
+  return `ghostex coordinator ${resolved ? 'resolve' : 'reopen'} ${shellQuote(requireId(globalRef, 'thread'))} --json`;
+}
+
 /** Quick action: `ghostex run-action <commandId> --project-id <id>` (always prints JSON). */
 export function runActionCommand(commandId: string, projectId: string): string {
   return (

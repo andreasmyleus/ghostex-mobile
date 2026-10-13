@@ -148,7 +148,11 @@ export type SummaryItem = {
   earlierReplies?: ProjectedMessage[];
   /** The turn is the live one. */
   active: boolean;
+  /** The running turn's rows behind its "Active work" fold. */
   work: ProjectedMessage[];
+  /** While the turn runs: the agent's newest message and the row it is on now, drawn under the fold
+   * so the work stays in view (gx-chat-core `live_work` in `transcript/turns.rs`). */
+  live?: ProjectedMessage[];
   /** What ended a turn the agent wrote no reply to: a slash command's output ("Set effort level to
    * High") or the "Interrupted" marker. Drawn under the prompt without a fold. */
   outcome?: ProjectedMessage[];
@@ -283,6 +287,8 @@ export type ProjectedMessage = {
   toolFold?: Json;
   /** Whether every tool row shows without a "show more". */
   toolsShowAllRows?: boolean;
+  /** A running summary turn's live row: its tool calls start open (gx-chat-core `live_work` in `transcript/turns.rs`). */
+  toolsOpen?: boolean;
   /** The live terminal tool row synthesized from the agent's screen. Desktop: `terminal_tool_row.rs`. */
   terminalTool?: Json;
   /** A `!` command the user ran, drawn as its tool card in the user's place. Desktop: `shell_command_card` in `tool_run.rs`. */

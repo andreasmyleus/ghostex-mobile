@@ -139,7 +139,8 @@ function AgentMessage({ message, proseColor }: { message: ProjectedMessage; pros
   const hasTools = arr(message.tools).length > 0;
   const flush = isFlushReply(message, flags.finalIds);
   const toolsKey = reasoning ? `reasoning:${id}` : `tools:${id}`;
-  const [toolsOpen, toggleTools] = useDisclosure(disclosures, toolsKey, verbose);
+  // A summary turn's live rows open their tools (gx-chat-core `live_work`).
+  const [toolsOpen, toggleTools] = useDisclosure(disclosures, toolsKey, verbose || message.toolsOpen === true);
   const openMenu = useMessageMenu(message, useReplyMenuActions(message));
   let lead = null;
   let toolsRendered = false;

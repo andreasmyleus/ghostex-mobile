@@ -39,13 +39,15 @@ function SummaryRow({ item }: { item: SummaryItem }) {
   const { disclosures } = useNativeChatUi();
   const [open, toggle] = useDisclosure(disclosures, `summary:${item.id}`, item.latestReply === true);
   const hasFinal = obj(item.final) !== null;
+  // A running turn whose only rows are its live ones has nothing left to fold.
+  const hasWork = item.work.length > 0;
   return (
     <View style={styles.column}>
       <MessageRow message={item.user} />
       {(item.outcome ?? []).map((message) => (
         <MessageRow key={message.id} message={message} />
       ))}
-      {hasFinal || item.active ? (
+      {hasFinal || (item.active && hasWork) ? (
         <>
           <DisclosureHeading label={hasFinal ? 'Agent reply' : 'Active work'} open={open} onToggle={toggle} />
           {open ? (
@@ -57,6 +59,9 @@ function SummaryRow({ item }: { item: SummaryItem }) {
           ) : null}
         </>
       ) : null}
+      {(item.live ?? []).map((message) => (
+        <MessageRow key={message.id} message={message} />
+      ))}
     </View>
   );
 }

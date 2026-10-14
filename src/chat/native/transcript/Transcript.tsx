@@ -37,6 +37,7 @@ import { useTranscriptTheme } from './theme';
 import { TranscriptItemView } from './TranscriptItemRow';
 import { QuestionFormsProvider } from './QuestionForm';
 import { RowFindContext, type RowFind } from './searchHighlight';
+import { PreviousQuestionPill, QUESTION_PILL, QuestionFlashProvider, type QuestionFlash } from './OpenQuestions';
 
 /**
  * `scroll-bottom.json`: the pill's look and how far from the bottom it appears.
@@ -214,6 +215,33 @@ export function NativeTranscript({ chat, items, main = true }: NativeTranscriptP
     }
   }, [filesJumpItem, filesJumpRevision, rows.length]);
 
+  // The Previous question pill and Q-tag links: scroll to the reply holding the question once per
+  // jump, with its end at the bottom of the screen since the form usually closes the reply, then
+  // outline the question for a moment (`questions/open_questions.rs`). A jump made before this
+  // list existed is not replayed.
+  const openQuestions = main ? (document?.openQuestions ?? null) : null;
+  const questionJump = openQuestions?.jump ?? null;
+  const questionJumpRevision = questionJump?.revision ?? 0;
+  const questionJumped = useRef<number | null>(null);
+  const [questionFlash, setQuestionFlash] = useState<QuestionFlash | null>(null);
+  useEffect(() => {
+    if (questionJumped.current === null) {
+      questionJumped.current = questionJumpRevision;
+      return;
+    }
+    if (questionJump === null || questionJumpRevision === questionJumped.current) return;
+    questionJumped.current = questionJumpRevision;
+    const position = rows.length - 1 - questionJump.item;
+    if (position >= 0 && position < rows.length) {
+      listRef.current?.scrollToIndex({ index: position, viewPosition: 0, animated: true });
+    }
+    setQuestionFlash({ target: questionJump.target, key: questionJumpRevision });
+    const timer = setTimeout(() => setQuestionFlash(null), QUESTION_PILL.flashMs);
+    return () => clearTimeout(timer);
+  }, [questionJump, questionJumpRevision, rows.length]);
+  const questionPill = openQuestions !== null && openQuestions.count > 0 ? openQuestions : null;
+  const previousQuestion = useCallback(() => dispatch({ type: 'previousQuestion' }), [dispatch]);
+
   const interruptToast = main ? (document?.interruptToast ?? null) : null;
   const errorTone = theme.light ? SCROLL_BOTTOM.errorTone.light : SCROLL_BOTTOM.errorTone.dark;
   const hasMore = main && document?.hasMore === true;
@@ -356,6 +384,7 @@ export function NativeTranscript({ chat, items, main = true }: NativeTranscriptP
 
   return (
     <TranscriptScope chat={chat} main={main}>
+      <QuestionFlashProvider value={questionFlash}>
       <View style={[styles.root, { backgroundColor: theme.background }]} accessibilityLabel='Conversation'>
         {body}
         {interruptToast ? (
@@ -390,25 +419,39 @@ export function NativeTranscript({ chat, items, main = true }: NativeTranscriptP
               </Text>
             </View>
           </View>
-        ) : awayFromBottom && rows.length > 0 ? (
-          <View style={styles.pillRow} pointerEvents='box-none'>
-            <Pressable
-              onPress={jumpToBottom}
-              accessibilityRole='button'
-              accessibilityLabel={SCROLL_BOTTOM.label}
-              style={[
-                styles.pill,
-                {
-                  backgroundColor: theme.light ? '#fefefe' : '#151515',
-                  borderColor: theme.light ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)',
-                },
-              ]}
-            >
-              <Text style={[styles.pillText, { color: theme.primary }]}>{SCROLL_BOTTOM.label}</Text>
-            </Pressable>
+        ) : (awayFromBottom || questionPill !== null) && rows.length > 0 ? (
+          <View style={[styles.pillRow, styles.pillRowSplit]} pointerEvents='box-none'>
+            {questionPill !== null ? (
+              <PreviousQuestionPill
+                text={questionPill.text}
+                accessibilityLabel={questionPill.accessibilityLabel}
+                light={theme.light}
+                height={SCROLL_BOTTOM.height}
+                paddingX={SCROLL_BOTTOM.paddingX}
+                fontSize={SCROLL_BOTTOM.fontSize}
+                onPress={previousQuestion}
+              />
+            ) : null}
+            {awayFromBottom ? (
+              <Pressable
+                onPress={jumpToBottom}
+                accessibilityRole='button'
+                accessibilityLabel={SCROLL_BOTTOM.label}
+                style={[
+                  styles.pill,
+                  {
+                    backgroundColor: theme.light ? '#fefefe' : '#151515',
+                    borderColor: theme.light ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)',
+                  },
+                ]}
+              >
+                <Text style={[styles.pillText, { color: theme.primary }]}>{SCROLL_BOTTOM.label}</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
       </View>
+      </QuestionFlashProvider>
     </TranscriptScope>
   );
 }
@@ -476,6 +519,7 @@ const styles = StyleSheet.create({
   buttonText: { fontSize: 14 },
   pageSpinner: { paddingVertical: 12, alignItems: 'center' },
   pillRow: { position: 'absolute', left: 0, right: 0, bottom: SCROLL_BOTTOM.bottom, alignItems: 'center' },
+  pillRowSplit: { flexDirection: 'row', justifyContent: 'center', gap: QUESTION_PILL.gap },
   pill: {
     height: SCROLL_BOTTOM.height,
     paddingHorizontal: SCROLL_BOTTOM.paddingX,

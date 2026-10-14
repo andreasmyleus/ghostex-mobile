@@ -72,8 +72,10 @@ export type ActionFields = {
   /** Up / Down history recall (`keyboard.rs`): `up` walks back, anything else forward. */
   recallHistory: { direction: 'up' | 'down' };
   openComposerReference: { href: string };
-  /** A link in the transcript; `external` for http(s). */
+  /** A link in the transcript; `external` for http(s). A Q-tag link (`#gx-question=Q80`) jumps to its question. */
   openMarkdownLink: { href: string; external?: boolean };
+  /** The Previous question pill: the next older unanswered question, wrapping to the newest. */
+  previousQuestion: {};
   /** An agent message card's Go to session: the other session, focused. Desktop: `inter_agent_message.rs`. */
   openAgentSession: { projectId: string; sessionId: string };
   /** Re-read the stash badge and note dot. The host sends it once the composer is ready. */

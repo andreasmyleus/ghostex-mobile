@@ -1,0 +1,118 @@
+/**
+ * The "Previous question" pill beside Scroll to bottom and the brief highlight on the question a jump
+ * lands on (the pill, or a Q-tag link in a reply). Which questions are unanswered, which one a tap
+ * goes to and the row it sits in are the chat core's (`openQuestions`,
+ * packages/gx-chat-core/src/questions/open_questions.rs); Transcript.tsx scrolls, this draws.
+ *
+ * CDXC:SessionChat 2026-10-14 SEE-ALSO:
+ * Desktop draws the same pill and highlight in apps/desktop/src/app/native_chat/open_questions.rs and
+ * scroll_bottom.rs; the rules are packages/gx-chat-core/src/transcript/open_questions.rs. Change them
+ * together.
+ */
+
+import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+
+/** `questionTone`, `pillGap` and `questionFlashMs` in `scroll-bottom.json`. */
+export const QUESTION_PILL = {
+  gap: 8,
+  flashMs: 1600,
+  tone: {
+    dark: { background: '#1d1712', border: 'rgba(251,146,60,0.4)', text: '#fdba74', ring: '#fb923c' },
+    light: { background: '#fff7ed', border: 'rgba(234,88,12,0.35)', text: '#c2410c', ring: '#ea580c' },
+  },
+};
+
+/** The question a jump just landed on; `key` changes with every jump so a repeat flashes again. */
+export type QuestionFlash = { target: string; key: number };
+
+const FlashContext = createContext<QuestionFlash | null>(null);
+export const QuestionFlashProvider = FlashContext.Provider;
+
+/** A question form or page card, outlined for a moment when a jump lands on it. */
+export function QuestionFlashFrame({
+  target,
+  light,
+  children,
+}: {
+  target: string;
+  light: boolean;
+  children: ReactNode;
+}) {
+  const flash = useContext(FlashContext);
+  const active = flash !== null && target.length > 0 && flash.target === target;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const key = active ? flash.key : null;
+  useEffect(() => {
+    if (key === null) {
+      opacity.setValue(0);
+      return;
+    }
+    opacity.setValue(1);
+    const fade = Animated.timing(opacity, {
+      toValue: 0,
+      duration: QUESTION_PILL.flashMs / 3,
+      delay: (QUESTION_PILL.flashMs * 2) / 3,
+      useNativeDriver: true,
+    });
+    fade.start();
+    return () => fade.stop();
+  }, [key, opacity]);
+  const ring = (light ? QUESTION_PILL.tone.light : QUESTION_PILL.tone.dark).ring;
+  return (
+    <View>
+      {children}
+      {active ? (
+        <Animated.View
+          pointerEvents='none'
+          style={[styles.ring, { borderColor: ring, backgroundColor: `${ring}14`, opacity }]}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+/** The pill: "❓ 2 · Previous question ↑". */
+export function PreviousQuestionPill({
+  text,
+  accessibilityLabel,
+  light,
+  height,
+  paddingX,
+  fontSize,
+  onPress,
+}: {
+  text: string;
+  accessibilityLabel: string;
+  light: boolean;
+  height: number;
+  paddingX: number;
+  fontSize: number;
+  onPress(): void;
+}) {
+  const tone = light ? QUESTION_PILL.tone.light : QUESTION_PILL.tone.dark;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole='button'
+      accessibilityLabel={accessibilityLabel}
+      style={[
+        styles.pill,
+        {
+          height,
+          paddingHorizontal: paddingX,
+          borderRadius: height / 2,
+          backgroundColor: tone.background,
+          borderColor: tone.border,
+        },
+      ]}
+    >
+      <Text style={{ fontSize, fontWeight: '500', color: tone.text }}>{text}</Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  ring: { position: 'absolute', top: -4, left: -4, right: -4, bottom: -4, borderRadius: 18, borderWidth: 2 },
+  pill: { borderWidth: 1, justifyContent: 'center' },
+});

@@ -371,6 +371,9 @@ export type ChatDocument = {
   answeredPages?: string[];
   /** The question forms (```questions blocks) by id (`questions/forms.rs`). */
   questionForms?: { [id: string]: Json };
+  /** The Previous question pill and the jumps to a question (`questions/open_questions.rs`).
+   * Desktop: `open_questions.rs`. */
+  openQuestions?: OpenQuestionsState;
   /** Per completed-work row id: its on-demand read is loading, or failed with a retry.
    * Desktop: `deferred_work.rs`. */
   deferredWork: { [itemId: string]: DeferredWorkRow };
@@ -668,6 +671,16 @@ export type FilesLinksGroup = { key: string; title: string; rows: FilesLinksRow[
 export type FilesLinksSection = { id: string; label: string; count: number; groups: FilesLinksGroup[]; moreLabel: string };
 
 /** The Files and links card: every attachment, file and link the session (and a coordinator's threads) mentioned. */
+export type OpenQuestionsState = {
+  /** Unanswered forms and question pages; the pill shows while this is above zero. */
+  count: number;
+  /** The pill's text: "❓ 2 · Previous question ↑". */
+  text: string;
+  accessibilityLabel: string;
+  /** Scroll to `item` once per `revision`, then highlight `target` (a form's or page's id). */
+  jump: { revision: number; item: number; target: string } | null;
+};
+
 export type FilesLinksState = {
   enabled: boolean;
   open: boolean;

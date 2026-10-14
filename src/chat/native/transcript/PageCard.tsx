@@ -22,6 +22,7 @@ import { Glyph } from './icons';
 import { str, type JsonRecord } from './json';
 import { answeredColor } from './PageAnswersCard';
 import { askedPageThumbnail, usePageThumbnailStore } from './pageThumbnails';
+import { QuestionFlashFrame } from './OpenQuestions';
 
 /** `packages/gx-chat-core/visual/page-card.json`. */
 const VISUAL = {
@@ -39,7 +40,17 @@ const VISUAL = {
   thumbnailHeight: 500,
 };
 
+/** The card, outlined for a moment when the Previous question pill or a Q-tag link lands on it. */
 export function PageCard({ answer, onLayout }: { answer: JsonRecord | null; onLayout: (event: LayoutChangeEvent) => void }) {
+  const { theme } = useTranscriptEnv();
+  return (
+    <QuestionFlashFrame target={str(answer, 'pageId')} light={theme.light}>
+      <PageCardBody answer={answer} onLayout={onLayout} />
+    </QuestionFlashFrame>
+  );
+}
+
+function PageCardBody({ answer, onLayout }: { answer: JsonRecord | null; onLayout: (event: LayoutChangeEvent) => void }) {
   const { theme, dispatch } = useTranscriptEnv();
   const flags = useTranscriptFlags();
   const url = str(answer, 'url');

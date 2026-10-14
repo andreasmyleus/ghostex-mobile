@@ -18,6 +18,7 @@ import { AskCard, AskHead, AskOption, PrimaryButton, type AskTone } from '../car
 import type { GlyphName } from '../cards/icons';
 import { arr, obj, str, type JsonRecord } from './json';
 import { MONO_FONT } from './theme';
+import { QuestionFlashFrame } from './OpenQuestions';
 
 /** The document's `questionForms`, by form id. */
 const FormsContext = createContext<{ [id: string]: Json }>({});
@@ -32,7 +33,17 @@ function placeholder(question: JsonRecord | null, draft: JsonRecord | null): str
   return draft?.otherPicked === true ? 'What would you prefer instead? (optional)' : 'Note (optional)';
 }
 
+/** The form, outlined for a moment when the Previous question pill or a Q-tag link lands on it. */
 export function QuestionForm({ id, source }: { id: string; source: string }) {
+  const { theme } = useTranscriptEnv();
+  return (
+    <QuestionFlashFrame target={id} light={theme.light}>
+      <QuestionFormCard id={id} source={source} />
+    </QuestionFlashFrame>
+  );
+}
+
+function QuestionFormCard({ id, source }: { id: string; source: string }) {
   const { theme, dispatch } = useTranscriptEnv();
   const form = obj(useContext(FormsContext)[id]);
   if (form === null) {

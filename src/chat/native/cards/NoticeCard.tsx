@@ -79,7 +79,7 @@ export function NoticeCard({
   }
 
   const body: ReactNode[] = [];
-  // The notice's own actions lead the footer; a live dialog's buttons and Dismiss sit at its right end.
+  // The notice's own actions sit at the footer's right end, ahead of a live dialog's buttons and Dismiss.
   const actions: ReactNode[] = [];
   const footerEnd: ReactNode[] = [];
   if (!collapsed && typeof notice.detail === 'string') {
@@ -191,8 +191,7 @@ export function NoticeCard({
       title={str(notice, 'title')}
       trailing={answerable ? <Glyph name={collapsed ? 'chevron-right' : 'chevron-down'} size={14} color={look.P.muted} /> : undefined}
       body={body}
-      footerStart={actions}
-      footerEnd={footerEnd}
+      footerEnd={[...actions, ...footerEnd]}
       accessibilityLabel={collapsed ? 'Show all options' : 'Show less'}
       onPressHeader={answerable ? () => setExpandedKey(collapsed ? key : null) : undefined}
     />

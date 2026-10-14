@@ -28,6 +28,9 @@ function letter(index: number): string {
   return index < 26 ? String.fromCharCode(97 + index) : String(index + 1);
 }
 
+/** The form's own notes box's hint; desktop (question_form.rs) says the same. */
+const NOTES_PLACEHOLDER = 'Anything else? (optional)';
+
 function placeholder(question: JsonRecord | null, draft: JsonRecord | null): string {
   if (question?.text === true) return str(question, 'placeholder') || 'Your answer (optional)';
   return draft?.otherPicked === true ? 'What would you prefer instead? (optional)' : 'Note (optional)';
@@ -69,7 +72,7 @@ function QuestionFormCard({ id, source }: { id: string; source: string }) {
               ? '1 question'
               : `${questions.length} questions`;
   const drafts = arr(form.drafts);
-  const body = questions.map((question, index) => (
+  const questionViews = questions.map((question, index) => (
     <View key={index} style={index > 0 ? [styles.later, { borderTopColor: theme.ink(0.06) }] : undefined}>
       <FormQuestion
         formId={id}
@@ -82,6 +85,20 @@ function QuestionFormCard({ id, source }: { id: string; source: string }) {
       />
     </View>
   ));
+  // The form's own notes box under the last question (the SessionChat 2026-10-14 DECISION in
+  // packages/gx-chat-core/src/questions/forms.rs).
+  const notes = str(form, 'notes');
+  const body =
+    form.takesNotes === true && (enabled || notes.trim().length > 0) ? (
+      <>
+        {questionViews}
+        <View style={[styles.later, { borderTopColor: theme.ink(0.06) }]}>
+          <FormNotes formId={id} notes={notes} enabled={enabled} />
+        </View>
+      </>
+    ) : (
+      questionViews
+    );
   // An answered form is one line that opens the read-only form and closes it again; the core says
   // which (`collapsed`, the SessionChat 2026-10-12 DECISION in packages/gx-chat-core/src/questions/forms.rs).
   if (phase === 'answered' && error.length === 0) {
@@ -141,6 +158,51 @@ function QuestionFormCard({ id, source }: { id: string; source: string }) {
   );
 }
 
+/** A typed box that takes the saved draft once, when it lands after the box was made. */
+function useSettledText(written: string) {
+  // The saved draft is read as the form appears, so its text can land after the box was made: it
+  // fills the box once (a remount with the saved text), never over what the reader typed.
+  const settled = useRef(written.length > 0);
+  const [filled, setFilled] = useState(0);
+  useEffect(() => {
+    if (!settled.current && written.length > 0) {
+      settled.current = true;
+      setFilled((count) => count + 1);
+    }
+  }, [written]);
+  return { filled, typed: () => (settled.current = true) };
+}
+
+function FormNotes({ formId, notes, enabled }: { formId: string; notes: string; enabled: boolean }) {
+  const { theme, dispatch } = useTranscriptEnv();
+  const { filled, typed } = useSettledText(notes);
+  if (!enabled) {
+    return (
+      <Text selectable style={[styles.detail, { color: theme.cardMuted }]}>
+        Notes: {notes}
+      </Text>
+    );
+  }
+  return (
+    <TextInput
+      key={filled}
+      multiline
+      defaultValue={notes}
+      placeholder={NOTES_PLACEHOLDER}
+      placeholderTextColor={theme.placeholder}
+      accessibilityLabel="Notes"
+      onChangeText={(text) => {
+        typed();
+        dispatch({ type: 'formNotes', form: formId, text });
+      }}
+      style={[
+        styles.input,
+        { color: theme.foreground, borderColor: theme.inputBorder, backgroundColor: theme.light ? theme.background : theme.cardRow },
+      ]}
+    />
+  );
+}
+
 function FormQuestion({
   formId,
   index,
@@ -167,16 +229,7 @@ function FormQuestion({
   const choices = arr(question?.choices);
   const written = str(draft, 'other');
   const pick = (choice: number) => dispatch({ type: 'formChoice', form: formId, question: index, choice });
-  // The saved draft is read as the form appears, so its text can land after the box was made: it
-  // fills the box once (a remount with the saved text), never over what the reader typed.
-  const settled = useRef(written.length > 0);
-  const [filled, setFilled] = useState(0);
-  useEffect(() => {
-    if (!settled.current && written.length > 0) {
-      settled.current = true;
-      setFilled((count) => count + 1);
-    }
-  }, [written]);
+  const { filled, typed } = useSettledText(written);
   return (
     <View style={styles.question}>
       <View style={styles.questionHead}>
@@ -223,7 +276,7 @@ function FormQuestion({
           placeholder={placeholder(question, draft)}
           placeholderTextColor={theme.placeholder}
           onChangeText={(text) => {
-            settled.current = true;
+            typed();
             dispatch({ type: 'formText', form: formId, question: index, text });
           }}
           style={[

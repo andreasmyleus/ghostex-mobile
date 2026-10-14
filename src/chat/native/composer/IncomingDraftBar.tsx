@@ -31,10 +31,10 @@ export function IncomingDraftBar({ draft, dispatch }: { draft: IncomingDraft; di
         <Text style={styles.text} numberOfLines={1}>
           Another saved draft is available
         </Text>
-        <Pressable accessibilityRole="button" onPress={() => dispatch({ type: 'useIncomingDraft' })} style={({ pressed }) => [styles.button, pressed ? styles.pressed : null]}>
+        <Pressable accessibilityRole="button" onPress={() => dispatch({ type: 'useIncomingDraft' })} style={({ pressed }) => [styles.button, pressed ? styles.buttonPressed : null]}>
           <Text style={styles.buttonText}>Use</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" onPress={() => dispatch({ type: 'dismissIncomingDraft' })} style={({ pressed }) => [styles.button, pressed ? styles.pressed : null]}>
+        <Pressable accessibilityRole="button" onPress={() => dispatch({ type: 'dismissIncomingDraft' })} style={({ pressed }) => [styles.button, pressed ? styles.buttonPressed : null]}>
           <Text style={styles.buttonText}>Dismiss</Text>
         </Pressable>
       </View>
@@ -53,7 +53,8 @@ const useStyles = themedStyles((P) => ({
   glyph: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   pressed: { backgroundColor: P.border },
   text: { flex: 1, color: P.primary, fontSize: 13 },
-  button: { paddingHorizontal: 10, height: 30, justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: P.border },
+  button: { paddingHorizontal: 10, height: 30, justifyContent: 'center', borderRadius: 8, backgroundColor: P.neutralFill },
+  buttonPressed: { backgroundColor: P.neutralFillPressed },
   buttonText: { color: P.primary, fontSize: 13 },
   preview: { color: P.muted, fontSize: 12.5, lineHeight: 18, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: P.border, backgroundColor: P.composerBackground },
 }));

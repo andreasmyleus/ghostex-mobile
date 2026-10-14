@@ -133,7 +133,7 @@ export function SavedPromptsSheet({
     body = (
       <View style={styles.centered}>
         <Text style={styles.error}>{stage.message}</Text>
-        <Pressable onPress={load} accessibilityRole="button" style={({ pressed }) => [styles.retry, pressed && { backgroundColor: P.controlPressed }]}>
+        <Pressable onPress={load} accessibilityRole="button" style={({ pressed }) => [styles.retry, pressed && { backgroundColor: P.neutralFillPressed }]}>
           <Text style={styles.retryText}>Retry</Text>
         </Pressable>
       </View>
@@ -197,7 +197,7 @@ const useStyles = themedStyles((P) => ({
   centered: { alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 24, paddingVertical: 32 },
   empty: { color: P.muted, fontSize: 14, lineHeight: 20, textAlign: 'center' },
   error: { color: P.error, fontSize: 14, lineHeight: 20, textAlign: 'center' },
-  retry: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: P.inputBorder },
+  retry: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, backgroundColor: P.neutralFill },
   retryText: { color: P.menuForeground, fontSize: 14 },
   list: { flexGrow: 0 },
   listContent: { paddingHorizontal: 12, paddingBottom: 8, gap: 6 },

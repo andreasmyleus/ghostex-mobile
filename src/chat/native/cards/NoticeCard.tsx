@@ -176,7 +176,7 @@ export function NoticeCard({
     );
   }
   if ((notice.choices === null || notice.choices === undefined) && (notice.dialog === null || notice.dialog === undefined)) {
-    footerEnd.push(<ToneButton key="dismiss" kind="ghost" label="Dismiss" onPress={() => dispatch({ type: 'dismissNotice' })} />);
+    footerEnd.push(<ToneButton key="dismiss" kind="secondary" label="Dismiss" onPress={() => dispatch({ type: 'dismissNotice' })} />);
   }
   if (typeof document.noticeError === 'string') {
     body.push(

@@ -33,7 +33,7 @@ export function AccountsPanel({ panel, onCommand }: { panel: JsonRecord; onComma
         <Text style={styles.paragraph}>
           Add your account to see usage and reset times in Ghostex, even if you only use one account.
         </Text>
-        <OutlineButton label="Add account" onPress={() => onCommand({ type: 'openAccountsSettings' }, false)} />
+        <FilledButton label="Add account" onPress={() => onCommand({ type: 'openAccountsSettings' }, false)} />
       </View>
     );
   }
@@ -107,7 +107,7 @@ function SessionBlocks({
         <View style={styles.alert} accessibilityRole="summary">
           <Text style={styles.strong}>{str(recovery, 'reason')}</Text>
           {str(recovery, 'next').length > 0 ? <Text style={styles.paragraph}>{str(recovery, 'next')}</Text> : null}
-          <OutlineButton
+          <FilledButton
             label="Stop automatic recovery"
             disabled={busy}
             onPress={() => onCommand({ type: 'accounts', request: { operation: 'stopRecovery' } }, true)}
@@ -254,10 +254,10 @@ function SessionBlocks({
             accessibilityRole="button"
             disabled={busy}
             onPress={onDefaults}
-            style={({ pressed }) => [styles.customize, pressed ? styles.pressed : null]}
+            style={({ pressed }) => [styles.customize, styles.filled, pressed ? styles.filledPressed : null, busy ? styles.dim : null]}
           >
-            <Glyph name="arrow-back-up" size={15} color={P.muted} />
-            <Text style={styles.paragraph}>Use session defaults</Text>
+            <Glyph name="arrow-back-up" size={15} color={P.foreground} />
+            <Text style={styles.filledLabel}>Use session defaults</Text>
           </Pressable>
         </>
       ) : null}
@@ -311,16 +311,17 @@ function ToggleRow({ label, value, disabled, onChange }: { label: string; value:
   );
 }
 
-function OutlineButton({ label, disabled = false, onPress }: { label: string; disabled?: boolean; onPress: () => void }) {
+/** The panel's labelled button: the chat's neutral fill (CDXC:AppModal 2026-10-14 on the desktop's `neutral_button_fills`). */
+function FilledButton({ label, disabled = false, onPress }: { label: string; disabled?: boolean; onPress: () => void }) {
   const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.outline, pressed ? styles.pressed : null, disabled ? styles.dim : null]}
+      style={({ pressed }) => [styles.filledWide, styles.filled, pressed ? styles.filledPressed : null, disabled ? styles.dim : null]}
     >
-      <Text style={styles.accountName}>{label}</Text>
+      <Text style={styles.filledLabel}>{label}</Text>
     </Pressable>
   );
 }
@@ -357,5 +358,8 @@ const useStyles = themedStyles((P) => ({
   meterLabel: { color: P.foreground, fontSize: 13 },
   track: { height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: P.meterTrack },
   fill: { height: '100%', borderRadius: 3, backgroundColor: P.meterFill },
-  outline: { height: 40, borderRadius: 10, borderWidth: 1, borderColor: P.menuBorder, alignItems: 'center', justifyContent: 'center' },
+  filledWide: { height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  filled: { backgroundColor: P.neutralFill },
+  filledPressed: { backgroundColor: P.neutralFillPressed },
+  filledLabel: { color: P.foreground, fontSize: 14 },
 }));

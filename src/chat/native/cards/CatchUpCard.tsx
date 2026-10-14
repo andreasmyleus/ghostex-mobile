@@ -146,7 +146,7 @@ const useStyles = themedStyles((P) => ({
   placeholder: { gap: 9, paddingVertical: 4 },
   placeholderBar: { height: 9, borderRadius: 5, backgroundColor: P.muted, opacity: 0.28 },
   buttonRow: { flexDirection: 'row', justifyContent: 'flex-end' },
-  button: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 26, paddingHorizontal: 9, borderRadius: 13, borderWidth: 1, borderColor: P.border },
-  buttonPressed: { backgroundColor: P.border },
+  button: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 26, paddingHorizontal: 9, borderRadius: 13, backgroundColor: P.neutralFill },
+  buttonPressed: { backgroundColor: P.neutralFillPressed },
   buttonLabel: { fontSize: 12 },
 }));

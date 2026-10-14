@@ -21,7 +21,7 @@ import {
   type AgentHotkey,
   type ConfigurableAgentId,
 } from '../settings/agentHotkeys';
-import { GhostexPalette, GhostexRadii, GhostexStrokeWidth } from '../theme/palette';
+import { destructiveButtonFills, GhostexPalette, GhostexRadii, GhostexStrokeWidth } from '../theme/palette';
 import type { Appearance } from '../theme/useAppearance';
 import KeyboardAwareScrollView from '../components/common/keyboard/KeyboardAwareScrollView';
 import { useAppearanceHeader } from './settings/useAppearanceHeader';
@@ -183,7 +183,7 @@ export default function AgentHotkeysEditorScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Move ${item.label} earlier`}
                   disabled={index === 0}
-                  style={[styles.smallButton, index === 0 && styles.disabled]}
+                  style={({ pressed }) => [styles.smallButton, pressed && styles.smallButtonPressed, index === 0 && styles.disabled]}
                   onPress={() => moveHotkey(index, -1)}
                 >
                   <Text style={styles.smallButtonLabel}>↑</Text>
@@ -192,8 +192,9 @@ export default function AgentHotkeysEditorScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Move ${item.label} later`}
                   disabled={index === agentHotkeys.length - 1}
-                  style={[
+                  style={({ pressed }) => [
                     styles.smallButton,
+                    pressed && styles.smallButtonPressed,
                     index === agentHotkeys.length - 1 && styles.disabled,
                   ]}
                   onPress={() => moveHotkey(index, 1)}
@@ -203,7 +204,7 @@ export default function AgentHotkeysEditorScreen() {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Remove ${item.label}`}
-                  style={styles.smallButton}
+                  style={({ pressed }) => [styles.smallButton, pressed && styles.smallButtonPressed]}
                   onPress={() => removeHotkey(item.id)}
                 >
                   <Text style={styles.removeLabel}>×</Text>
@@ -255,7 +256,7 @@ export default function AgentHotkeysEditorScreen() {
           {editingIndex >= 0 ? (
             <Pressable
               accessibilityRole="button"
-              style={styles.secondaryButton}
+              style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
               onPress={clearEditor}
             >
               <Text style={styles.secondaryButtonLabel}>Cancel edit</Text>
@@ -265,7 +266,7 @@ export default function AgentHotkeysEditorScreen() {
 
         <Pressable
           accessibilityRole="button"
-          style={styles.resetButton}
+          style={({ pressed }) => [styles.resetButton, pressed && styles.resetButtonPressed]}
           onPress={handleReset}
         >
           <Text style={styles.resetButtonLabel}>
@@ -301,6 +302,9 @@ export default function AgentHotkeysEditorScreen() {
     </SafeAreaView>
   );
 }
+
+/** The Restore defaults label, and the destructive fill under it. */
+const RESET_COLOR = '#FF7B72';
 
 function createStyles(appearance: Appearance) {
   return StyleSheet.create({
@@ -390,9 +394,10 @@ function createStyles(appearance: Appearance) {
       borderRadius: GhostexRadii.pill,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: appearance.background,
-      borderWidth: GhostexStrokeWidth,
-      borderColor: appearance.border,
+      backgroundColor: appearance.neutralFill,
+    },
+    smallButtonPressed: {
+      backgroundColor: appearance.neutralFillPressed,
     },
     smallButtonLabel: {
       color: appearance.foreground,
@@ -459,9 +464,10 @@ function createStyles(appearance: Appearance) {
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: GhostexRadii.row,
-      backgroundColor: appearance.card,
-      borderWidth: GhostexStrokeWidth,
-      borderColor: appearance.border,
+      backgroundColor: appearance.neutralFill,
+    },
+    secondaryButtonPressed: {
+      backgroundColor: appearance.neutralFillPressed,
     },
     secondaryButtonLabel: {
       color: appearance.foreground,
@@ -473,12 +479,13 @@ function createStyles(appearance: Appearance) {
       justifyContent: 'center',
       marginTop: 8,
       borderRadius: GhostexRadii.row,
-      backgroundColor: appearance.card,
-      borderWidth: GhostexStrokeWidth,
-      borderColor: appearance.border,
+      backgroundColor: destructiveButtonFills(RESET_COLOR, appearance.light).rest,
+    },
+    resetButtonPressed: {
+      backgroundColor: destructiveButtonFills(RESET_COLOR, appearance.light).pressed,
     },
     resetButtonLabel: {
-      color: '#FF7B72',
+      color: RESET_COLOR,
       fontSize: 14,
       fontWeight: '600',
     },

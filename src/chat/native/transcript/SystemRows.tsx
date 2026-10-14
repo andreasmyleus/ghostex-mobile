@@ -300,10 +300,16 @@ export function StartupDelivery({ message, waitingLine = true }: { message: Proj
       <Text style={[styles.small, { color: theme.muted }]}>{status}</Text>
       {failed ? (
         <>
-          <Pressable style={styles.deliveryAction} onPress={() => dispatch({ type: 'retryQueue', promptId: delivery.promptId })}>
+          <Pressable
+            style={({ pressed }) => [styles.deliveryAction, { backgroundColor: pressed ? theme.neutralFillPressed : theme.neutralFill }]}
+            onPress={() => dispatch({ type: 'retryQueue', promptId: delivery.promptId })}
+          >
             <Text style={[styles.small, { color: theme.primary }]}>Retry</Text>
           </Pressable>
-          <Pressable style={styles.deliveryAction} onPress={() => dispatch({ type: 'removeQueue', promptId: delivery.promptId })}>
+          <Pressable
+            style={({ pressed }) => [styles.deliveryAction, { backgroundColor: pressed ? theme.neutralFillPressed : theme.neutralFill }]}
+            onPress={() => dispatch({ type: 'removeQueue', promptId: delivery.promptId })}
+          >
             <Text style={[styles.small, { color: theme.primary }]}>Remove</Text>
           </Pressable>
         </>

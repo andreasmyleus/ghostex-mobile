@@ -44,7 +44,7 @@ export default function LogsSheet({ visible, onClose }: LogsSheetProps) {
             <Text style={styles.title}>Logs</Text>
             <Pressable
               accessibilityRole="button"
-              style={styles.copyButton}
+              style={({ pressed }) => [styles.copyButton, pressed && styles.copyButtonPressed]}
               disabled={entries.length === 0}
               onPress={copyLog}
             >
@@ -106,11 +106,12 @@ const styles = StyleSheet.create({
     minHeight: 32,
     paddingHorizontal: 14,
     borderRadius: GhostexRadii.row,
-    backgroundColor: GhostexPalette.CARD_ACTIVE,
-    borderWidth: GhostexStrokeWidth,
-    borderColor: GhostexPalette.BORDER,
+    backgroundColor: GhostexPalette.NEUTRAL_FILL,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  copyButtonPressed: {
+    backgroundColor: GhostexPalette.NEUTRAL_FILL_PRESSED,
   },
   copyButtonLabel: {
     color: GhostexPalette.FOREGROUND,

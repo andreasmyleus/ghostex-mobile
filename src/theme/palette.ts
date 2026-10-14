@@ -1,3 +1,25 @@
+/** A filled button's background at rest and while pressed. */
+export type ButtonFills = { rest: string; pressed: string };
+
+/**
+ * The neutral filled button every secondary text button uses: a wash of the ink (white in dark,
+ * black in light) over whatever it sits on, with no border.
+ *
+ * CDXC:AppModal 2026-10-14 SEE-ALSO: `neutral_button_fills` and `destructive_button_fills` in apps/desktop/src/app/window/native_modal_kit/palette.rs hold the user's decision (no outline buttons, always filled) and the same alphas.
+ */
+export function neutralButtonFills(light: boolean): ButtonFills {
+  return light
+    ? { rest: 'rgba(0,0,0,0.07)', pressed: 'rgba(0,0,0,0.15)' }
+    : { rest: 'rgba(255,255,255,0.10)', pressed: 'rgba(255,255,255,0.18)' };
+}
+
+/** The filled destructive button (Remove, Delete): a tint of the destructive colour under its label. */
+export function destructiveButtonFills(destructive: string, light: boolean): ButtonFills {
+  return light
+    ? { rest: colorWithOpacity(destructive, 10), pressed: colorWithOpacity(destructive, 22) }
+    : { rest: colorWithOpacity(destructive, 18), pressed: colorWithOpacity(destructive, 32) };
+}
+
 /**
  * GhostexPalette design tokens.
  * Source of truth: docs/specs/sessions-drawer.md §0.
@@ -23,6 +45,12 @@ export const GhostexPalette = {
   ACCENT_FOREGROUND: '#181818',
   /** Destructive labels. */
   DANGER: '#E85C5C',
+  /** Secondary text buttons: the neutral fill at rest and pressed (`neutralButtonFills`). */
+  NEUTRAL_FILL: neutralButtonFills(false).rest,
+  NEUTRAL_FILL_PRESSED: neutralButtonFills(false).pressed,
+  /** Destructive text buttons: a tint of DANGER at rest and pressed (`destructiveButtonFills`). */
+  DANGER_FILL: destructiveButtonFills('#E85C5C', false).rest,
+  DANGER_FILL_PRESSED: destructiveButtonFills('#E85C5C', false).pressed,
   /** Attention + done dot (blue, NOT green). Matches desktop --attention-dot. */
   STATUS_ATTENTION: '#95D7F6',
   /** Working dot (amber). Matches the desktop session-card working dot. */
@@ -146,6 +174,9 @@ export const SetupPalette = {
   WARN: '#ffb454',
   ERROR: '#ff6b6b',
   ERROR_BORDER: 'rgba(255,107,107,0.4)',
+  /** Secondary button: the neutral fill at rest and pressed (`neutralButtonFills`). */
+  NEUTRAL_FILL: neutralButtonFills(false).rest,
+  NEUTRAL_FILL_PRESSED: neutralButtonFills(false).pressed,
   /** Primary button: white fill, near-black label. */
   PRIMARY_BUTTON: '#f4f4f5',
   PRIMARY_BUTTON_FOREGROUND: '#111111',

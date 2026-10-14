@@ -131,8 +131,7 @@ export function SaveMarkdownDialog({ chat }: { chat: RustChat }) {
       accessibilityState={{ disabled, busy }}
       style={({ pressed }) => [
         styles.button,
-        { borderColor: theme.border },
-        pressed && !disabled && { backgroundColor: theme.input },
+        { backgroundColor: pressed && !disabled ? theme.neutralFillPressed : theme.neutralFill },
         disabled && styles.disabled,
       ]}
     >
@@ -195,7 +194,6 @@ const styles = StyleSheet.create({
   button: {
     height: 36,
     borderRadius: 10,
-    borderWidth: 1,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',

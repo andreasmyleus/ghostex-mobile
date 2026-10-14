@@ -216,7 +216,7 @@ export default function WebPreviewPortsScreen({ navigation, route }: Props) {
             accessibilityRole='button'
             accessibilityLabel={WebPreviewCopy.refreshButton}
             onPress={() => void loadPorts(true)}
-            style={styles.pillButton}
+            style={({ pressed }) => [styles.pillButton, pressed && styles.pillButtonPressed]}
           >
             <Text style={styles.pillButtonLabel}>{WebPreviewCopy.refreshButton}</Text>
           </Pressable>

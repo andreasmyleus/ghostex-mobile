@@ -338,7 +338,11 @@ export function NativeTranscript({ chat, items, main = true }: NativeTranscriptP
       main && hasMore ? (
         // React's one manual case: a transcript with no rows yet.
         <View style={styles.empty}>
-          <Pressable onPress={loadEarlier} style={[styles.button, { borderColor: theme.border }]} accessibilityRole='button'>
+          <Pressable
+            onPress={loadEarlier}
+            style={({ pressed }) => [styles.button, { backgroundColor: pressed ? theme.neutralFillPressed : theme.neutralFill }]}
+            accessibilityRole='button'
+          >
             <Text style={[styles.buttonText, { color: theme.primary }]}>{loadingEarlier ? 'Loading earlier turns…' : 'Load earlier turns'}</Text>
           </Pressable>
         </View>
@@ -515,7 +519,7 @@ const styles = StyleSheet.create({
   rowInner: { width: '100%', maxWidth: ROW_MAX_WIDTH, paddingHorizontal: 16, paddingBottom: 16 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 },
   subagentRow: { paddingHorizontal: 4, paddingBottom: 16 },
-  button: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  button: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   buttonText: { fontSize: 14 },
   pageSpinner: { paddingVertical: 12, alignItems: 'center' },
   pillRow: { position: 'absolute', left: 0, right: 0, bottom: SCROLL_BOTTOM.bottom, alignItems: 'center' },

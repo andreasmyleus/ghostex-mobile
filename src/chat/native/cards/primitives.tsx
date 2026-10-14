@@ -2,7 +2,7 @@
  * The pieces every chat card is built from, ported from the desktop renderer:
  * the status card shell (`cards.rs`), its pressable header (`status_card_press_header`),
  * choice rows (`choice_rows.rs`), the question card buttons (`question_button` in `question.rs`)
- * and the small bordered chat button (`chat_button` in `composer.rs`).
+ * and the small neutral filled chat button (`chat_button` in `composer.rs`).
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -193,7 +193,7 @@ export function ChoiceRowLabelMeasure({ label, onWidth }: { label: string; onWid
   );
 }
 
-/** The question card's footer button (`question_button`): always bordered (CDXC:SessionChat 2026-10-09 on the desktop's `question_button`). */
+/** The question card's footer button (`question_button`): always the neutral fill (CDXC:SessionChat 2026-10-14 on the desktop's `question_button`). */
 export function CardButton({
   label,
   onPress,
@@ -221,7 +221,7 @@ export function CardButton({
         styles.cardButton,
         wide ? styles.cardButtonWide : null,
         disabled === true && styles.disabled,
-        pressed && { backgroundColor: P.input },
+        pressed && { backgroundColor: P.neutralFillPressed },
       ]}
     >
       <Text style={[styles.cardButtonLabel, tint !== undefined && { color: tint }]}>{label}</Text>
@@ -229,7 +229,7 @@ export function CardButton({
   );
 }
 
-/** The small bordered button the chat uses for Retry, Use, Dismiss and the dialog actions. */
+/** The small neutral filled button the chat uses for Retry, Use, Dismiss and the dialog actions. */
 export function ChatButton({
   label,
   onPress,
@@ -250,7 +250,7 @@ export function ChatButton({
       disabled={disabled === true}
       onPress={onPress}
       hitSlop={6}
-      style={({ pressed }) => [styles.chatButton, disabled === true && styles.disabled, pressed && { backgroundColor: P.border }]}
+      style={({ pressed }) => [styles.chatButton, disabled === true && styles.disabled, pressed && { backgroundColor: P.neutralFillPressed }]}
     >
       {icon !== undefined ? <Glyph name={icon} size={14} color={P.primary} /> : null}
       <Text style={styles.chatButtonLabel}>{label}</Text>
@@ -419,7 +419,8 @@ const useStyles = themedStyles((P) => ({
     justifyContent: 'center',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: P.controlBorder,
+    borderColor: 'transparent',
+    backgroundColor: P.neutralFill,
   },
   cardButtonWide: {
     minWidth: 96,
@@ -436,7 +437,8 @@ const useStyles = themedStyles((P) => ({
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: P.border,
+    borderColor: 'transparent',
+    backgroundColor: P.neutralFill,
   },
   chatButtonLabel: {
     color: P.primary,

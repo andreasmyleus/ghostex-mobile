@@ -78,7 +78,6 @@ export default function UpdatesPage() {
   const update = availableUpdate(check);
   const status = checkStatusLine(check);
   const mutedText = { color: appearance.muted };
-  const secondaryButton = { backgroundColor: appearance.card, borderColor: appearance.border };
 
   return (
     <SettingsScreenLayout>
@@ -140,7 +139,6 @@ export default function UpdatesPage() {
         label={UpdatesCopy.checkButton}
         accessibilityLabel={UpdatesCopy.checkButton}
         busy={check.phase === 'checking'}
-        style={secondaryButton}
         onPress={() => void checkForUpdates()}
       />
     </SettingsScreenLayout>

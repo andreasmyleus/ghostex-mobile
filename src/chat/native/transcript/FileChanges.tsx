@@ -258,7 +258,7 @@ function FileChangeDiff({ rowKey, file, colors }: { rowKey: string; file: JsonRe
       {failed && (showAll || !hasMore) ? <Text style={[styles.error, { color: theme.error }]}>{str(file, 'error')}</Text> : null}
       <View style={styles.footer}>
         {hasMore ? (
-          <Pressable onPress={toggleAll} accessibilityRole='button' style={({ pressed }) => [styles.ghost, pressed && { backgroundColor: theme.pressed }]}>
+          <Pressable onPress={toggleAll} accessibilityRole='button' style={({ pressed }) => [styles.ghost, { backgroundColor: pressed ? theme.neutralFillPressed : theme.neutralFill }]}>
             <Glyph name={showAll ? 'chevron-up' : 'chevron-down'} size={13} color={theme.muted} />
             <Text style={[styles.ghostText, { color: theme.muted }]}>{showAll ? 'Show fewer lines' : str(file, 'showAllLabel')}</Text>
           </Pressable>
@@ -269,7 +269,7 @@ function FileChangeDiff({ rowKey, file, colors }: { rowKey: string; file: JsonRe
             onPress={() => dispatch({ type: 'openMarkdownLink', href: str(file, 'path'), external: false })}
             accessibilityRole='link'
             accessibilityLabel={`Open ${str(file, 'filename')}`}
-            style={({ pressed }) => [styles.ghost, pressed && { backgroundColor: theme.pressed }]}
+            style={({ pressed }) => [styles.ghost, { backgroundColor: pressed ? theme.neutralFillPressed : theme.neutralFill }]}
           >
             <Glyph name='external-link' size={13} color={theme.muted} />
             <Text style={[styles.ghostText, { color: theme.muted }]}>Open file</Text>
@@ -309,6 +309,7 @@ const styles = StyleSheet.create({
   hunk: { fontFamily: MONO_FONT, fontSize: 11.5, lineHeight: 18, paddingHorizontal: 14, paddingVertical: 2 },
   error: { fontSize: 14, paddingHorizontal: 14, paddingTop: 8 },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingTop: 8 },
+  // The footer's text buttons take the chat's neutral fill (CDXC:AppModal 2026-10-14 on the desktop's `neutral_button_fills`).
   ghost: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 28, paddingHorizontal: 11, borderRadius: 8 },
   ghostText: { fontSize: 13, fontWeight: '500' },
 });

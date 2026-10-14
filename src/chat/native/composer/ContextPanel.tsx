@@ -34,7 +34,7 @@ export function ContextPanel({ context, onCommand }: { context: JsonRecord; onCo
         accessibilityLabel="Compact context"
         disabled={compactDisabled}
         onPress={() => onCommand({ type: 'contextCompact' })}
-        style={({ pressed }) => [styles.compact, pressed ? styles.pressed : null, compactDisabled ? styles.disabled : null]}
+        style={({ pressed }) => [styles.compact, pressed ? styles.compactPressed : null, compactDisabled ? styles.disabled : null]}
       >
         <Text style={styles.compactText}>Compact context</Text>
       </Pressable>
@@ -81,11 +81,11 @@ const useStyles = themedStyles((P) => ({
   compact: {
     height: 40,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: P.menuBorder,
+    backgroundColor: P.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  compactPressed: { backgroundColor: P.neutralFillPressed },
   compactText: { color: P.primary, fontSize: 14 },
   reason: { color: P.muted, fontSize: 12 },
   pressed: { backgroundColor: P.controlPressed },

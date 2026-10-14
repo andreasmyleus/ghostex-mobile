@@ -267,7 +267,7 @@ export function HandoffSheet({
           disabled={busy}
           onPress={onClose}
           accessibilityRole='button'
-          style={({ pressed }) => [styles.button, pressed ? styles.pressed : null, busy ? styles.dim : null]}
+          style={({ pressed }) => [styles.button, pressed ? styles.buttonPressed : null, busy ? styles.dim : null]}
         >
           <Text style={styles.buttonText}>{showResult ? 'Done' : 'Cancel'}</Text>
         </Pressable>
@@ -277,7 +277,7 @@ export function HandoffSheet({
               void Clipboard.setStringAsync(stage.path).then(() => setCopied(true));
             }}
             accessibilityRole='button'
-            style={({ pressed }) => [styles.button, pressed ? styles.pressed : null]}
+            style={({ pressed }) => [styles.button, pressed ? styles.buttonPressed : null]}
           >
             <Text style={styles.buttonText}>{copied ? 'Path Copied' : 'Copy Path'}</Text>
           </Pressable>
@@ -368,7 +368,8 @@ const useStyles = themedStyles((P) => ({
     paddingHorizontal: 14,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: P.menuBorder,
+    borderColor: 'transparent',
+    backgroundColor: P.neutralFill,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -378,6 +379,7 @@ const useStyles = themedStyles((P) => ({
   primary: { backgroundColor: P.send.fill, borderColor: P.send.fill, flexShrink: 1 },
   primaryText: { color: P.send.ink, fontSize: 14, fontWeight: '600', flexShrink: 1 },
   pressed: { backgroundColor: P.controlPressed },
+  buttonPressed: { backgroundColor: P.neutralFillPressed },
   pressedPrimary: { opacity: 0.85 },
   dim: { opacity: 0.5 },
 }));

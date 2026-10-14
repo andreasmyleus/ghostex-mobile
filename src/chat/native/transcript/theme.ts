@@ -10,6 +10,7 @@
 
 import { Platform, StyleSheet } from 'react-native';
 
+import { destructiveButtonFills, neutralButtonFills } from '../../../theme/palette';
 import { useSettingsStore } from '../../../settings/store';
 
 export type TranscriptTheme = {
@@ -68,6 +69,15 @@ export type TranscriptTheme = {
   accent: string;
   /** A pressed card, card header or choice. */
   pressedFill: string;
+  /**
+   * Every secondary text button in the chat's cards, sheets and dialogs: the neutral fill at rest
+   * and pressed, no border (`neutralButtonFills`, CDXC:AppModal 2026-10-14 on the desktop's
+   * `neutral_button_fills`). Destructive ones (Delete, Remove) take `destructiveFill`, a tint of `error`.
+   */
+  neutralFill: string;
+  neutralFillPressed: string;
+  destructiveFill: string;
+  destructiveFillPressed: string;
   /** A selected choice's fill and border (`control_primary` at 10% / 30%). */
   selectedFill: string;
   selectedBorder: string;
@@ -156,6 +166,10 @@ const DARK: TranscriptTheme = {
   ringGlow: 'rgba(115,115,115,0.20)',
   accent: '#86d3f8',
   pressedFill: 'rgba(252,252,252,0.06)',
+  neutralFill: neutralButtonFills(false).rest,
+  neutralFillPressed: neutralButtonFills(false).pressed,
+  destructiveFill: destructiveButtonFills('#ef9999', false).rest,
+  destructiveFillPressed: destructiveButtonFills('#ef9999', false).pressed,
   selectedFill: 'rgba(229,229,229,0.10)',
   selectedBorder: 'rgba(229,229,229,0.30)',
   wellFill: 'rgba(14,14,14,0.7)',
@@ -223,6 +237,10 @@ const LIGHT: TranscriptTheme = {
   ringGlow: 'rgba(159,159,169,0.20)',
   accent: '#262626',
   pressedFill: '#f5f5f5',
+  neutralFill: neutralButtonFills(true).rest,
+  neutralFillPressed: neutralButtonFills(true).pressed,
+  destructiveFill: destructiveButtonFills('#c53030', true).rest,
+  destructiveFillPressed: destructiveButtonFills('#c53030', true).pressed,
   selectedFill: 'rgba(24,24,27,0.10)',
   selectedBorder: 'rgba(24,24,27,0.30)',
   wellFill: '#f7f7f7',

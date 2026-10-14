@@ -30,8 +30,8 @@ export function RewindDialog({ chat }: { chat: RustChat }) {
         styles.button,
         primary
           ? { backgroundColor: theme.controlPrimary }
-          : { borderColor: theme.light ? '#e5e5e5' : 'rgba(255,255,255,0.08)', borderWidth: 1 },
-        (pressed || disabled) && { opacity: disabled ? 0.5 : 0.8 },
+          : { backgroundColor: pressed && !disabled ? theme.neutralFillPressed : theme.neutralFill },
+        disabled ? { opacity: 0.5 } : pressed && primary && { opacity: 0.8 },
       ]}
     >
       <Text style={[styles.buttonText, { color: primary ? theme.background : theme.foreground }]}>{label}</Text>

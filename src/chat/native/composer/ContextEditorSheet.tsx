@@ -126,11 +126,20 @@ export function ContextEditorSheet({ editor, dispatch }: { editor: JsonRecord | 
         </DragLockContext.Provider>
       </ScrollView>
       <View style={styles.footer}>
-        <Pressable accessibilityRole="button" disabled={saving} onPress={() => dispatch({ type: 'contextReset' })} style={styles.textButton}>
-          <Text style={styles.textButtonLabel}>Reset to recommended</Text>
+        <Pressable
+          accessibilityRole="button"
+          disabled={saving}
+          onPress={() => dispatch({ type: 'contextReset' })}
+          style={({ pressed }) => [styles.button, pressed ? styles.buttonPressed : null, saving ? styles.dim : null]}
+        >
+          <Text style={styles.buttonText}>Reset to recommended</Text>
         </Pressable>
         <View style={styles.footerRight}>
-          <Pressable accessibilityRole="button" onPress={() => dispatch({ type: 'contextCancel' })} style={styles.button}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => dispatch({ type: 'contextCancel' })}
+            style={({ pressed }) => [styles.button, pressed ? styles.buttonPressed : null]}
+          >
             <Text style={styles.buttonText}>Cancel</Text>
           </Pressable>
           <Pressable accessibilityRole="button" disabled={saving} onPress={() => dispatch({ type: 'contextSave' })} style={[styles.button, styles.primary, saving ? styles.dim : null]}>
@@ -286,9 +295,9 @@ const useStyles = themedStyles((P) => ({
     borderTopColor: P.menuBorder,
   },
   footerRight: { flexDirection: 'row', gap: 8 },
-  textButton: { height: 38, justifyContent: 'center' },
-  textButtonLabel: { color: P.muted, fontSize: 13 },
-  button: { height: 38, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1, borderColor: P.menuBorder, justifyContent: 'center' },
+  // Every footer action is filled: the neutral fill, Save the primary (CDXC:AppModal 2026-10-14 on the desktop's `neutral_button_fills`).
+  button: { height: 38, paddingHorizontal: 14, borderRadius: 10, backgroundColor: P.neutralFill, justifyContent: 'center' },
+  buttonPressed: { backgroundColor: P.neutralFillPressed },
   buttonText: { color: P.foreground, fontSize: 14 },
   primary: { backgroundColor: P.send.fill, borderColor: P.send.fill },
   primaryText: { color: P.send.ink, fontSize: 14, fontWeight: '600' },

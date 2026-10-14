@@ -188,7 +188,7 @@ export default function CoordinatorDetailsSheet({ mode, load, onSave, onCancel }
                     <Pressable
                       accessibilityRole="button"
                       disabled={note.trim().length === 0}
-                      style={[styles.addButton, note.trim().length === 0 ? styles.buttonDisabled : null]}
+                      style={({ pressed }) => [styles.addButton, pressed && styles.cancelButtonPressed, note.trim().length === 0 ? styles.buttonDisabled : null]}
                       onPress={addNote}
                     >
                       <Text style={styles.cancelLabel}>Add</Text>
@@ -199,7 +199,11 @@ export default function CoordinatorDetailsSheet({ mode, load, onSave, onCancel }
               ) : null}
               {error !== null ? <Text style={styles.error}>{error}</Text> : null}
               <View style={styles.buttonRow}>
-                <Pressable accessibilityRole="button" style={styles.cancelButton} onPress={onCancel}>
+                <Pressable
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.cancelButton, pressed && styles.cancelButtonPressed]}
+                  onPress={onCancel}
+                >
                   <Text style={styles.cancelLabel}>Cancel</Text>
                 </Pressable>
                 <Pressable
@@ -332,7 +336,8 @@ const styles = StyleSheet.create({
   addButton: {
     borderRadius: 8,
     borderWidth: GhostexStrokeWidth,
-    borderColor: GhostexPalette.BORDER,
+    borderColor: 'transparent',
+    backgroundColor: GhostexPalette.NEUTRAL_FILL,
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
@@ -365,10 +370,12 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     borderRadius: 8,
-    borderWidth: GhostexStrokeWidth,
-    borderColor: GhostexPalette.BORDER,
+    backgroundColor: GhostexPalette.NEUTRAL_FILL,
     alignItems: 'center',
     paddingVertical: 10,
+  },
+  cancelButtonPressed: {
+    backgroundColor: GhostexPalette.NEUTRAL_FILL_PRESSED,
   },
   cancelLabel: {
     color: GhostexPalette.FOREGROUND,

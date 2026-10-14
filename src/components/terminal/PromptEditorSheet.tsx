@@ -107,7 +107,7 @@ export default function PromptEditorSheet({
                 <Pressable
                   accessibilityRole="button"
                   disabled={busy}
-                  style={[styles.cancelButton, busy ? styles.buttonDisabled : null]}
+                  style={({ pressed }) => [styles.cancelButton, pressed && styles.cancelButtonPressed, busy ? styles.buttonDisabled : null]}
                   onPress={() => onCancel(text)}
                 >
                   <Text style={styles.cancelLabel}>Cancel</Text>
@@ -193,11 +193,12 @@ const styles = StyleSheet.create({
     height: 40,
     paddingHorizontal: 16,
     borderRadius: GhostexRadii.card,
-    backgroundColor: GhostexPalette.CARD_ACTIVE,
-    borderWidth: GhostexStrokeWidth,
-    borderColor: GhostexPalette.BORDER,
+    backgroundColor: GhostexPalette.NEUTRAL_FILL,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cancelButtonPressed: {
+    backgroundColor: GhostexPalette.NEUTRAL_FILL_PRESSED,
   },
   cancelLabel: {
     color: GhostexPalette.FOREGROUND,

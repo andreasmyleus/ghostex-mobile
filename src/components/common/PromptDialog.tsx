@@ -87,7 +87,11 @@ export default function PromptDialog({
               ) : null}
               {error !== null && error.length > 0 ? <Text style={styles.error}>{error}</Text> : null}
               <View style={styles.buttonRow}>
-                <Pressable accessibilityRole="button" style={styles.cancelButton} onPress={onCancel}>
+                <Pressable
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.cancelButton, pressed && styles.cancelButtonPressed]}
+                  onPress={onCancel}
+                >
                   <Text style={styles.cancelLabel}>Cancel</Text>
                 </Pressable>
                 <Pressable
@@ -185,11 +189,12 @@ const styles = StyleSheet.create({
     height: 40,
     paddingHorizontal: 16,
     borderRadius: GhostexRadii.card,
-    backgroundColor: GhostexPalette.CARD_ACTIVE,
-    borderWidth: GhostexStrokeWidth,
-    borderColor: GhostexPalette.BORDER,
+    backgroundColor: GhostexPalette.NEUTRAL_FILL,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cancelButtonPressed: {
+    backgroundColor: GhostexPalette.NEUTRAL_FILL_PRESSED,
   },
   cancelLabel: {
     color: GhostexPalette.FOREGROUND,

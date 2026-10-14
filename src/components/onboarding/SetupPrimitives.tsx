@@ -2,8 +2,8 @@
  * Shared building blocks of the setup flow, styled with SetupPalette so every
  * screen renders the same button, row group, callout and text styles as the
  * mockup (docs/2026-09-03/mobile-setup/shared.css): white primary button,
- * bordered secondary (no borderless buttons: CDXC:AppModal 2026-10-09 in the desktop's
- * `settings_button_sized`); #1d1d1d row groups with hairline
+ * neutral filled secondary (no outline or borderless buttons: CDXC:AppModal 2026-10-14 on the
+ * desktop's `neutral_button_fills`); #1d1d1d row groups with hairline
  * dividers; 12px sections, 8px controls.
  */
 
@@ -67,7 +67,7 @@ export function SetupButton({
         variant === 'secondary' ? buttonStyles.secondary : null,
         large ? buttonStyles.large : null,
         small ? buttonStyles.small : null,
-        pressed ? buttonStyles.pressed : null,
+        pressed ? (variant === 'secondary' ? buttonStyles.secondaryPressed : buttonStyles.pressed) : null,
         disabled ? buttonStyles.disabled : null,
         style,
       ]}
@@ -110,8 +110,11 @@ const buttonStyles = StyleSheet.create({
     borderColor: SetupPalette.PRIMARY_BUTTON,
   },
   secondary: {
-    backgroundColor: SetupPalette.CARD,
-    borderColor: SetupPalette.BORDER_STRONG,
+    backgroundColor: SetupPalette.NEUTRAL_FILL,
+    borderColor: 'transparent',
+  },
+  secondaryPressed: {
+    backgroundColor: SetupPalette.NEUTRAL_FILL_PRESSED,
   },
   large: {
     height: 48,

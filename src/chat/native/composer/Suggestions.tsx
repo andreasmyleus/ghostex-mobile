@@ -30,7 +30,12 @@ export function Suggestions({ data, dispatch }: { data: unknown; dispatch: (acti
             {isTrue(popup, 'loading') ? <ActivityIndicator size="small" color={P.muted} /> : null}
             <Text style={styles.statusText}>{status}</Text>
             {isTrue(popup, 'retry') ? (
-              <Pressable accessibilityRole="button" hitSlop={8} onPress={() => dispatch({ type: 'suggestionRetry' })}>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={() => dispatch({ type: 'suggestionRetry' })}
+                style={({ pressed }) => [styles.retryButton, pressed && styles.retryButtonPressed]}
+              >
                 <Text style={styles.retry}>Retry</Text>
               </Pressable>
             ) : null}
@@ -76,6 +81,9 @@ const useStyles = themedStyles((P) => ({
   heading: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4, color: P.muted, fontSize: 10, fontWeight: '600', letterSpacing: 1.4 },
   status: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 8 },
   statusText: { flex: 1, color: P.muted, fontSize: 14 },
+  // React's outline Retry, now the chat's neutral fill (CDXC:AppModal 2026-10-14 on the desktop's `neutral_button_fills`).
+  retryButton: { height: 28, paddingHorizontal: 10, borderRadius: 6, justifyContent: 'center', backgroundColor: P.neutralFill },
+  retryButtonPressed: { backgroundColor: P.neutralFillPressed },
   retry: { color: P.foreground, fontSize: 14, fontWeight: '500' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40, paddingHorizontal: 12, borderRadius: 10 },
   rowSelected: { backgroundColor: P.border },

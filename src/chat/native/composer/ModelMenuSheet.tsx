@@ -336,7 +336,12 @@ function ApplyBar({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={() => onApply(secondary)}
-      style={({ pressed }) => [styles.apply, primary ? styles.applyPrimary : styles.applySecondary, pressed ? styles.applyPressed : null, disabled ? styles.applyOff : null]}
+      style={({ pressed }) => [
+        styles.apply,
+        primary ? styles.applyPrimary : styles.applySecondary,
+        pressed ? (primary ? styles.applyPressed : styles.applySecondaryPressed) : null,
+        disabled ? styles.applyOff : null,
+      ]}
     >
       <Text style={[styles.applyText, primary ? styles.applyTextPrimary : null]} numberOfLines={1}>
         {label}
@@ -412,7 +417,8 @@ const useStyles = themedStyles((P) => ({
   applyRow: { flexDirection: 'row', gap: 8 },
   apply: { flex: 1, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   applyPrimary: { backgroundColor: P.send.fill },
-  applySecondary: { borderWidth: 1, borderColor: P.menuBorder },
+  applySecondary: { backgroundColor: P.neutralFill },
+  applySecondaryPressed: { backgroundColor: P.neutralFillPressed },
   applyPressed: { opacity: 0.8 },
   applyOff: { opacity: 0.42 },
   applyText: { color: P.menuForeground, fontSize: 15, fontWeight: '600' },

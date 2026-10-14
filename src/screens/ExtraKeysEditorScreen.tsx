@@ -34,7 +34,7 @@ import {
   type ExtraKeyStored,
   type ExtraKeysLayout,
 } from '../settings/extraKeys';
-import { GhostexPalette, GhostexRadii, GhostexStrokeWidth } from '../theme/palette';
+import { destructiveButtonFills, GhostexPalette, GhostexRadii, GhostexStrokeWidth } from '../theme/palette';
 import type { Appearance } from '../theme/useAppearance';
 import KeyboardAvoidingContainer from '../components/common/keyboard/KeyboardAvoidingContainer';
 import KeyboardAwareScrollView from '../components/common/keyboard/KeyboardAwareScrollView';
@@ -248,16 +248,19 @@ export default function ExtraKeysEditorScreen() {
 
         {selected !== null && (
           <View style={styles.selectionActions}>
-            <Pressable style={styles.actionButton} onPress={() => moveSelected(-1)}>
+            <Pressable style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]} onPress={() => moveSelected(-1)}>
               <Text style={styles.actionLabel}>◀ Move</Text>
             </Pressable>
-            <Pressable style={styles.actionButton} onPress={() => moveSelected(1)}>
+            <Pressable style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]} onPress={() => moveSelected(1)}>
               <Text style={styles.actionLabel}>Move ▶</Text>
             </Pressable>
-            <Pressable style={styles.actionButton} onPress={moveSelectedToOtherRow}>
+            <Pressable style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]} onPress={moveSelectedToOtherRow}>
               <Text style={styles.actionLabel}>Other row</Text>
             </Pressable>
-            <Pressable style={styles.actionButton} onPress={removeSelected}>
+            <Pressable
+              style={({ pressed }) => [styles.actionButton, styles.actionButtonDestructive, pressed && styles.actionButtonDestructivePressed]}
+              onPress={removeSelected}
+            >
               <Text style={[styles.actionLabel, styles.actionLabelDestructive]}>Remove</Text>
             </Pressable>
           </View>
@@ -273,7 +276,11 @@ export default function ExtraKeysEditorScreen() {
         >
           <Text style={styles.primaryButtonLabel}>Save keys</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" style={styles.secondaryButton} onPress={handleReset}>
+        <Pressable
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
+          onPress={handleReset}
+        >
           <Text style={styles.secondaryButtonLabel}>Reset to default</Text>
         </Pressable>
       </ScrollView>
@@ -403,7 +410,10 @@ export default function ExtraKeysEditorScreen() {
                     </>
                   )}
                   <View style={styles.modalActions}>
-                    <Pressable style={styles.secondaryButton} onPress={() => setCustomDraft(null)}>
+                    <Pressable
+                      style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
+                      onPress={() => setCustomDraft(null)}
+                    >
                       <Text style={styles.secondaryButtonLabel}>Cancel</Text>
                     </Pressable>
                     <Pressable style={[styles.primaryButton, styles.modalPrimaryButton]} onPress={submitCustomDraft}>
@@ -419,6 +429,9 @@ export default function ExtraKeysEditorScreen() {
     </SafeAreaView>
   );
 }
+
+/** The Remove label, and the destructive fill under it. */
+const REMOVE_COLOR = '#FF6B6B';
 
 function createStyles(appearance: Appearance) {
   return StyleSheet.create({
@@ -495,16 +508,23 @@ function createStyles(appearance: Appearance) {
       borderRadius: GhostexRadii.row,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: appearance.card,
-      borderWidth: GhostexStrokeWidth,
-      borderColor: appearance.border,
+      backgroundColor: appearance.neutralFill,
+    },
+    actionButtonPressed: {
+      backgroundColor: appearance.neutralFillPressed,
+    },
+    actionButtonDestructive: {
+      backgroundColor: destructiveButtonFills(REMOVE_COLOR, appearance.light).rest,
+    },
+    actionButtonDestructivePressed: {
+      backgroundColor: destructiveButtonFills(REMOVE_COLOR, appearance.light).pressed,
     },
     actionLabel: {
       color: appearance.foreground,
       fontSize: 12,
     },
     actionLabelDestructive: {
-      color: '#FF6B6B',
+      color: REMOVE_COLOR,
     },
     examples: {
       color: appearance.muted,
@@ -531,10 +551,11 @@ function createStyles(appearance: Appearance) {
       borderRadius: GhostexRadii.row,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: appearance.card,
-      borderWidth: GhostexStrokeWidth,
-      borderColor: appearance.border,
+      backgroundColor: appearance.neutralFill,
       paddingHorizontal: 16,
+    },
+    secondaryButtonPressed: {
+      backgroundColor: appearance.neutralFillPressed,
     },
     secondaryButtonLabel: {
       color: appearance.foreground,

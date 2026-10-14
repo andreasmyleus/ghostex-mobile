@@ -335,7 +335,11 @@ export default function DelayedSendDialog({
                 </View>
               </View>
               <View style={styles.buttonRow}>
-                <Pressable accessibilityRole='button' style={styles.cancelButton} onPress={onCancel}>
+                <Pressable
+                  accessibilityRole='button'
+                  style={({ pressed }) => [styles.cancelButton, pressed && styles.cancelButtonPressed]}
+                  onPress={onCancel}
+                >
                   <Text style={styles.cancelLabel}>Cancel</Text>
                 </Pressable>
                 <Pressable
@@ -540,10 +544,12 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     borderRadius: 8,
-    borderWidth: GhostexStrokeWidth,
-    borderColor: GhostexPalette.BORDER,
+    backgroundColor: GhostexPalette.NEUTRAL_FILL,
     alignItems: 'center',
     paddingVertical: 10,
+  },
+  cancelButtonPressed: {
+    backgroundColor: GhostexPalette.NEUTRAL_FILL_PRESSED,
   },
   cancelLabel: {
     color: GhostexPalette.FOREGROUND,

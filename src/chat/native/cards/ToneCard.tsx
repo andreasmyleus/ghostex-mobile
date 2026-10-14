@@ -1,7 +1,7 @@
 /**
  * The tone card the notices and approvals above the composer are drawn in: a faint wash of the
  * card's tone, a tinted icon tile beside a title and a muted detail line, the body, and a footer
- * with one primary action, secondary buttons and quiet ghost buttons. Port of desktop
+ * with one primary action and neutral filled secondary buttons. Port of desktop
  * `tone_card.rs`; the decision is on `notice_tone` in
  * `packages/gx-chat-core/src/questions/notice_tone.rs`.
  */
@@ -153,7 +153,11 @@ export function ToneCard({
   );
 }
 
-export type ToneButtonKind = 'primary' | 'secondary' | 'ghost';
+/**
+ * How much a footer button stands out. There is no ghost or outlined footer button: every labelled
+ * one is filled (CDXC:AppModal 2026-10-14 on the desktop's `neutral_button_fills`).
+ */
+export type ToneButtonKind = 'primary' | 'secondary';
 
 /** A footer button. The phone has no keyboard hints. */
 export function ToneButton({
@@ -171,10 +175,10 @@ export function ToneButton({
 }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
-  const fill = kind === 'primary' ? P.controlPrimary : kind === 'secondary' ? (P.light ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.05)') : 'transparent';
-  const pressedFill = kind === 'primary' ? P.controlPrimary : P.light ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.09)';
-  const ink = kind === 'primary' ? P.background : kind === 'secondary' ? P.foreground : P.muted;
-  const border = kind === 'primary' ? P.controlPrimary : kind === 'secondary' ? P.controlBorder : 'transparent';
+  const fill = kind === 'primary' ? P.controlPrimary : P.neutralFill;
+  const pressedFill = kind === 'primary' ? P.controlPrimary : P.neutralFillPressed;
+  const ink = kind === 'primary' ? P.background : P.foreground;
+  const border = kind === 'primary' ? P.controlPrimary : 'transparent';
   return (
     <Pressable
       accessibilityRole="button"
@@ -195,7 +199,7 @@ export function ToneButton({
   );
 }
 
-/** The circled X every chat card dismisses with. */
+/** The circled X every chat card dismisses with, filled like the secondary footer buttons (the 2026-09-07 decision in the desktop's approval.rs). */
 export function ToneDismiss({ onPress }: { onPress: () => void }) {
   const styles = useStyles();
   const P = useTranscriptTheme();
@@ -205,7 +209,7 @@ export function ToneDismiss({ onPress }: { onPress: () => void }) {
       accessibilityLabel="Dismiss"
       hitSlop={8}
       onPress={onPress}
-      style={({ pressed }) => [styles.dismiss, pressed && { backgroundColor: P.wellFill }]}
+      style={({ pressed }) => [styles.dismiss, pressed && { backgroundColor: P.neutralFillPressed }]}
     >
       <Glyph name="x" size={14} color={P.muted} />
     </Pressable>
@@ -315,9 +319,7 @@ const useStyles = themedStyles((P) => ({
     width: 28,
     height: 28,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: P.light ? P.wellBorder : 'rgba(255,255,255,0.04)',
-    backgroundColor: P.light ? P.background : 'rgba(14,14,14,0.4)',
+    backgroundColor: P.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

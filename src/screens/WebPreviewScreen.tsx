@@ -689,7 +689,11 @@ function PreviewFailure({ failure, onRetry }: { failure: WebPreviewFailure; onRe
       <Text style={styles.stateBody}>{failure.message}</Text>
       {failure.hint.length > 0 ? <Text style={styles.stateBody}>{failure.hint}</Text> : null}
       <View style={styles.stateActions}>
-        <Pressable accessibilityRole='button' onPress={onRetry} style={styles.pillButton}>
+        <Pressable
+          accessibilityRole='button'
+          onPress={onRetry}
+          style={({ pressed }) => [styles.pillButton, pressed && styles.pillButtonPressed]}
+        >
           <Text style={styles.pillButtonLabel}>{WebPreviewCopy.retryButton}</Text>
         </Pressable>
       </View>

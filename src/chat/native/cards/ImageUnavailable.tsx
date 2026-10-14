@@ -132,7 +132,7 @@ export function ImageUnavailable({
             onPress={() => {
               void Clipboard.setStringAsync(copyPath).then(onCopied);
             }}
-            style={({ pressed }) => [styles.button, pressed && { backgroundColor: P.input }]}
+            style={({ pressed }) => [styles.button, pressed && { backgroundColor: P.neutralFillPressed }]}
           >
             <Glyph name={copied ? 'check' : 'copy'} size={13} color={P.foreground} />
             <Text style={styles.buttonLabel}>{copied ? 'Copied' : 'Copy path'}</Text>
@@ -217,8 +217,7 @@ const useStyles = themedStyles((P) => ({
     alignItems: 'center',
     gap: 6,
     borderRadius: 7,
-    borderWidth: 1,
-    borderColor: P.border,
+    backgroundColor: P.neutralFill,
   },
   buttonLabel: {
     color: P.foreground,

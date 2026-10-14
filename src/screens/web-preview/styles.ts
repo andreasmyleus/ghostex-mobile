@@ -96,11 +96,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 14,
     minHeight: 32,
     borderRadius: GhostexRadii.pill,
-    backgroundColor: GhostexPalette.CARD_ACTIVE,
-    borderWidth: GhostexStrokeWidth,
-    borderColor: GhostexPalette.BORDER,
+    backgroundColor: GhostexPalette.NEUTRAL_FILL,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pillButtonPressed: {
+    backgroundColor: GhostexPalette.NEUTRAL_FILL_PRESSED,
   },
   pillButtonLabel: {
     color: GhostexPalette.FOREGROUND,

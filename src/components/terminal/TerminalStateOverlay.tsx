@@ -8,7 +8,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { TerminalTab } from '../../terminal/sessions';
-import { GhostexPalette, GhostexRadii, GhostexStrokeWidth } from '../../theme/palette';
+import { GhostexPalette, GhostexRadii } from '../../theme/palette';
 import { WarningTriangleIcon } from './icons';
 
 export type TerminalStateOverlayProps = {
@@ -42,7 +42,11 @@ export default function TerminalStateOverlay({
           {errorCaption !== null && errorCaption.length > 0 && (
             <Text style={styles.caption}>{errorCaption}</Text>
           )}
-          <Pressable accessibilityRole="button" style={styles.button} onPress={onRetry}>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={onRetry}
+          >
             <Text style={styles.buttonLabel}>Retry</Text>
           </Pressable>
         </View>
@@ -50,7 +54,11 @@ export default function TerminalStateOverlay({
       {tab.state === 'closed' && (
         <View style={styles.stack}>
           <Text style={styles.headline}>Disconnected</Text>
-          <Pressable accessibilityRole="button" style={styles.button} onPress={onReconnect}>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={onReconnect}
+          >
             <Text style={styles.buttonLabel}>Reconnect</Text>
           </Pressable>
         </View>
@@ -94,9 +102,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: GhostexRadii.card,
-    backgroundColor: GhostexPalette.CARD_ACTIVE,
-    borderWidth: GhostexStrokeWidth,
-    borderColor: GhostexPalette.BORDER,
+    backgroundColor: GhostexPalette.NEUTRAL_FILL,
+  },
+  buttonPressed: {
+    backgroundColor: GhostexPalette.NEUTRAL_FILL_PRESSED,
   },
   buttonLabel: {
     color: GhostexPalette.FOREGROUND,

@@ -335,11 +335,10 @@ function buildStyles(appearance: Appearance) {
     secondary: {
       ...button,
       flex: 1,
-      borderWidth: GhostexStrokeWidth,
-      borderColor: appearance.border,
+      backgroundColor: appearance.neutralFill,
     },
     secondaryPressed: {
-      backgroundColor: appearance.cardActive,
+      backgroundColor: appearance.neutralFillPressed,
     },
     secondaryLabel: {
       color: appearance.foreground,

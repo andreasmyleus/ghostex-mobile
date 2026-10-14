@@ -55,7 +55,11 @@ export default function ConfirmDialog({
           ) : null}
           <View style={styles.buttonRow}>
             {cancelLabel !== null ? (
-              <Pressable accessibilityRole="button" style={styles.cancelButton} onPress={onCancel}>
+              <Pressable
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.cancelButton, pressed && styles.cancelButtonPressed]}
+                onPress={onCancel}
+              >
                 <Text style={styles.cancelLabel}>{cancelLabel}</Text>
               </Pressable>
             ) : null}
@@ -124,11 +128,12 @@ const styles = StyleSheet.create({
     height: 40,
     paddingHorizontal: 16,
     borderRadius: GhostexRadii.card,
-    backgroundColor: GhostexPalette.CARD_ACTIVE,
-    borderWidth: GhostexStrokeWidth,
-    borderColor: GhostexPalette.BORDER,
+    backgroundColor: GhostexPalette.NEUTRAL_FILL,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cancelButtonPressed: {
+    backgroundColor: GhostexPalette.NEUTRAL_FILL_PRESSED,
   },
   cancelLabel: {
     color: GhostexPalette.FOREGROUND,

@@ -87,6 +87,12 @@ export type TranscriptEnv = {
    * count, and tool rows hide their command preview (desktop `ChatAppearance::simple`).
    */
   simple: boolean;
+  /**
+   * The folds under each agent message (its tool calls, a thought's tools, a finished turn's
+   * "Worked" log) start open: in verbose mode, and whenever Simple mode is off (desktop
+   * `ChatAppearance::work_open`, CDXC:SessionChat 2026-10-14 DECISION).
+   */
+  workOpen: boolean;
   /** File edit previews: file cards show their first lines without a tap. */
   filePreviews: boolean;
   /** This session's own transcript (not the subagent viewer): only it offers rewind. */

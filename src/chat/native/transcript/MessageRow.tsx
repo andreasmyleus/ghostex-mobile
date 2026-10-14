@@ -129,7 +129,7 @@ function UserMessage({ message }: { message: ProjectedMessage }) {
 }
 
 function AgentMessage({ message, proseColor }: { message: ProjectedMessage; proseColor: string }) {
-  const { theme, verbose } = useTranscriptEnv();
+  const { theme, workOpen } = useTranscriptEnv();
   const { disclosures } = useNativeChatUi();
   const flags = useTranscriptFlags();
   const { inWorkFold, hideFileChanges } = useFoldPlace();
@@ -140,7 +140,7 @@ function AgentMessage({ message, proseColor }: { message: ProjectedMessage; pros
   const flush = isFlushReply(message, flags.finalIds);
   const toolsKey = reasoning ? `reasoning:${id}` : `tools:${id}`;
   // A running summary turn's newest row opens its tools (gx-chat-core `summary_mode_turns`).
-  const [toolsOpen, toggleTools] = useDisclosure(disclosures, toolsKey, verbose || message.toolsOpen === true);
+  const [toolsOpen, toggleTools] = useDisclosure(disclosures, toolsKey, workOpen || message.toolsOpen === true);
   const openMenu = useMessageMenu(message, useReplyMenuActions(message));
   let lead = null;
   let toolsRendered = false;

@@ -23,6 +23,17 @@ const ROW_GAP = 2;
 /** A row's padding beside its glyph tile, and the tile's side (desktop `tool_run.rs`). */
 const ROW_PAD_X = 8;
 const TILE = 22;
+/**
+ * A described tool row's label: the agent's prose colour, 20% dimmer.
+ * SEE-ALSO: apps/desktop/src/app/native_chat/tool_run.rs (`DESCRIBED_LABEL_OPACITY`).
+ */
+const DESCRIBED_LABEL_OPACITY = 0.8;
+
+/** A `#rrggbb` theme colour at an alpha (a nested `Text` run ignores `opacity`). */
+function dimmed(hex: string, alpha: number): string {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+  return `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+}
 
 /**
  * The tool rows of one message, folded the way the core's `toolFold` says, or in Simple mode
@@ -180,18 +191,21 @@ const ToolRow = memo(function ToolRow({
   const expanded = open && hasDetail;
   const detail = obj(useRowDetail(key, 'tool', messageId, index, expanded));
   const failed = tool.failed === true;
-  // Simple mode names the call by the description the agent gave it, when it gave one (gx-chat-core `tool_description`).
-  const description = str(tool, 'description');
-  const name = simple && description.length > 0 ? description : str(tool, 'name');
+  // A call the agent described is named by that description in every mode, without its command
+  // preview (gx-chat-core `tool_description`); opening the row shows the command.
+  const described = str(tool, 'description').length > 0;
+  const name = str(tool, 'label') || str(tool, 'name');
   const failure = str(tool, 'failure');
   const duration = str(tool, 'duration');
   const status = str(tool, 'status');
-  // Simple mode hides the command preview next to the tool's name; a failed call says what failed after it.
-  const argument = simple ? '' : str(tool, 'preview');
+  // Simple mode and a description hide the command preview; a failed call says what failed after it.
+  const argument = simple || described ? '' : str(tool, 'preview');
   const preview = failure.length === 0 ? argument : argument.length === 0 ? failure : `${argument} \u00b7 ${failure}`;
   const subagent = str(tool.subagent, 'name');
   const openSubagent = subagentOpenAction(tool.subagent);
-  const heading = failed ? theme.error : theme.foreground;
+  // A description reads as the agent's own prose: the reply's size and weight, a fifth dimmer.
+  const heading = failed ? theme.error : described ? dimmed(theme.prose, DESCRIBED_LABEL_OPACITY) : theme.foreground;
+  const nameStyle = described ? [styles.name, styles.described] : styles.name;
   const trigger = (
     <Pressable
       disabled={!hasDetail}
@@ -213,12 +227,12 @@ const ToolRow = memo(function ToolRow({
         // One line with two runs (desktop `name_and_preview`): side by side, the mono preview sat
         // below the name's baseline; nested runs share one.
         <Text numberOfLines={1} style={[styles.nameLine, styles.fill]}>
-          <Text style={[styles.name, { color: heading }]}>{name}</Text>
+          <Text style={[nameStyle, { color: heading }]}>{name}</Text>
           {' '}
           <Text style={[styles.preview, { color: theme.muted }]}>{preview}</Text>
         </Text>
       ) : (
-        <Text numberOfLines={1} style={[styles.name, subagent.length === 0 && styles.fill, { color: heading }]}>
+        <Text numberOfLines={1} style={[nameStyle, subagent.length === 0 && styles.fill, { color: heading }]}>
           {name}
         </Text>
       )}
@@ -366,6 +380,7 @@ const styles = StyleSheet.create({
   tile: { width: TILE, height: TILE, borderRadius: 6, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   fill: { flex: 1 },
   name: { fontSize: 13.5, lineHeight: 20, fontWeight: '500', flexShrink: 0 },
+  described: { fontSize: PROSE_SIZE, fontWeight: '400' },
   preview: { fontFamily: MONO_FONT, fontSize: 12.3, fontWeight: '400', flexShrink: 1, minWidth: 0 },
   nameLine: { fontSize: 13.5, lineHeight: 20, flexShrink: 1, minWidth: 0 },
   duration: { fontSize: 11.5, flexShrink: 0, fontVariant: ['tabular-nums'] },

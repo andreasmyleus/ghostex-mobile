@@ -100,9 +100,10 @@ export function TranscriptScope({ chat, main, children }: { chat: RustChat; main
   // A subagent's transcript uses the normal display, whatever the main chat's mode (desktop DECISION).
   const verbose = main ? (document?.verboseOverride ?? verboseSetting) : false;
   const simple = main && simpleSetting;
+  const workOpen = main && (verbose || !simple);
   const env = useMemo<TranscriptEnv>(
-    () => ({ dispatch: chat.dispatch, theme, verbose, simple, filePreviews: main && filePreviews, main }),
-    [chat.dispatch, filePreviews, main, simple, theme, verbose]
+    () => ({ dispatch: chat.dispatch, theme, verbose, simple, workOpen, filePreviews: main && filePreviews, main }),
+    [chat.dispatch, filePreviews, main, simple, theme, verbose, workOpen]
   );
   // The document is parsed afresh per frame, so the flags are keyed by their content.
   const flagsSignature =

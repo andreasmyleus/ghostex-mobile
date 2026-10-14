@@ -277,10 +277,11 @@ export type ProjectedMessage = {
   simpleFileLabel?: string;
   /** "N tool calls" in simple mode. */
   simpleToolLabel?: string;
-  /** Tool call rows: `{name, glyph, preview, failed, status: 'done' | 'failed' | 'running',
+  /** Tool call rows: `{name, label, glyph, preview, failed, status: 'done' | 'failed' | 'running',
    * failure, duration, description, hasCall, hasDetail, exchange, sentMessage, subagent}`; `failure`
-   * is what a failed call reported, `duration` how long it ran ("14.3s") and `description` the line
-   * the agent gave the call (Simple mode shows it in place of `name`), each empty when unknown.
+   * is what a failed call reported, `duration` how long it ran ("14.3s"), `description` the line
+   * the agent gave the call and `label` what the row reads (that description in every mode, else
+   * `name`), each empty when unknown.
    * Desktop: `tool_run.rs`, `terminal_tool_row.rs`. */
   tools?: Json[];
   /** How the tool rows fold. Desktop: `tool_run.rs`. */

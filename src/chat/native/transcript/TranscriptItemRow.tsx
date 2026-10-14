@@ -68,11 +68,11 @@ function SummaryRow({ item }: { item: SummaryItem }) {
 }
 
 function CompletedWorkRow({ item }: { item: CompletedWorkItem }) {
-  const { verbose, simple, dispatch } = useTranscriptEnv();
+  const { workOpen, simple, dispatch } = useTranscriptEnv();
   const { disclosures } = useNativeChatUi();
   const flags = useTranscriptFlags();
   const key = `work:${item.id}`;
-  const [open, toggleRaw] = useDisclosure(disclosures, key, verbose);
+  const [open, toggleRaw] = useDisclosure(disclosures, key, workOpen);
   const deferred = obj(item.deferred);
   const toggle = () => {
     // Opening a turn whose work is not in the document reads it on demand.
